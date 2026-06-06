@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('staff', function (Blueprint $table) {
             $table->id();
+            $table->uuid()->unique();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('specialization')->nullable();
             $table->integer('experience_years')->nullable();
