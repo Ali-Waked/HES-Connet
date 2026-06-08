@@ -8,10 +8,14 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Spatie\Translatable\HasTranslations;
+
 #[Fillable(['name','latitude','longitude','facility_type','organization_id','parent_id'])]
 class Facility extends Model
 {
-    use HasUuids;
+    use HasUuids, HasTranslations;
+
+    public array $translatable = ['name'];
     public function organization(): BelongsTo {
         return $this->belongsTo(Organization::class);
     }

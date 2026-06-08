@@ -6,9 +6,14 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+use Spatie\Translatable\HasTranslations;
+
 #[Fillable(['auth_id','title','content','category_id','views'])]
 class Article extends Model
 {
+    use HasTranslations;
+
+    public array $translatable = ['title', 'content'];
     protected function casts():array {
         return [
             'views' => 'integer',

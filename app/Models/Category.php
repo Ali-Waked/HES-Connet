@@ -8,9 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Override;
 
+use Spatie\Translatable\HasTranslations;
+
 #[Fillable(['name','type'])]
 class Category extends Model
 {
+    use HasTranslations;
+
+    public array $translatable = ['name'];
     protected function casts(): array
     {
         return ['type' => CategoriesType::class];
