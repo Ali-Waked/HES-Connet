@@ -14,8 +14,15 @@ return new class extends Migration
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
             $table->uuid()->unique();
-            $table->foreignId('staff_id')->constrained();
+            $table->foreignId('auth_id')->constrained('staff')->cascadeOnDelete();
             $table->string('title');
+            $table->enum('status', [
+                'draft',
+                'pending_review',
+                'published',
+                'archived',
+                'rejected',
+            ])->default('draft');
             $table->text('content');
             $table->foreignId('category_id')->constrained();
             $table->integer('views')->default(0);

@@ -40,7 +40,7 @@ class DepartmentController extends Controller
         );
 
         return response()->json([
-            'message' => 'Department created successfully.',
+            'message' => __('Department created successfully.'),
             'data' => $department->load([
                 'facility',
                 'head',
@@ -68,7 +68,7 @@ class DepartmentController extends Controller
         );
 
         return response()->json([
-            'message' => 'Department updated successfully.',
+            'message' => __('Department updated successfully.'),
             'data' => $department->load([
                 'facility',
                 'head',
@@ -86,7 +86,7 @@ class DepartmentController extends Controller
         $this->department_service->destroy($department);
 
         return response()->json([
-            'message' => 'Department deleted successfully.',
+            'message' => __('Department deleted successfully.'),
         ]);
     }
 }
