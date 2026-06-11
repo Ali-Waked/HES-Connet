@@ -1,26 +1,54 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 
+/**
+ * @property-read string $uuid
+ * @property array $name
+ * @property int $facility_id
+ * @property int|null $head_id
+ * @property-read \App\Models\Facility $facility
+ * @property-read \App\Models\Staff|null $head
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\FacilityStaff> $facilityStaff
+ */
 #[Fillable(['name','facility_id','head_id'])]
+#[Translatable(['name'])]
 class Department extends Model
 {
-    use HasUlids, HasTranslations;
+    use HasUuids, HasTranslations;
 
-    public array $translatable = ['name'];
-
-    public function head(): BelongsTo {
-        return $this->belongsTo(Staff::class,'head_id');
+     public function uniqueIds(): array
+    {
+        return ['uuid'];
     }
 
-    public function facility(): BelongsTo {
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
+    public function head(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'head_id');
+    }
+
+    public function facility(): BelongsTo
+    {
         return $this->belongsTo(Facility::class);
+    }
+
+    public function facilityStaff(): HasMany
+    {
+        return $this->hasMany(FacilityStaff::class);
     }
 }

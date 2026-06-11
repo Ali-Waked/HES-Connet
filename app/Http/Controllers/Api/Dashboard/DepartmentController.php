@@ -1,60 +1,64 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Department\StoreDepartmentRequest;
 use App\Http\Requests\Department\UpdateDepartmentRequest;
+use App\Http\Resources\DepartmentResource;
 use App\Models\Department;
 use App\Services\DepartmentService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
 {
-       public function __construct(
+    public function __construct(
         private readonly DepartmentService $department_service
     ) {}
 
-    public function index(): JsonResponse
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
+    public function index()
     {
-        return response()->json(
+        return DepartmentResource::collection(
             $this->department_service->paginate(
-                request('per_page', 15),
+                (int) request('per_page', 15),
                 request('search'),
                 request('facility_id')
             )
         );
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
- 
-    public function store( StoreDepartmentRequest $request): JsonResponse 
+    public function store(StoreDepartmentRequest $request): JsonResponse
     {
-
         $department = $this->department_service->create(
             $request->validated()
         );
 
         return response()->json([
             'message' => __('Department created successfully.'),
-            'data' => $department->load([
-                'facility',
-                'head',
-            ]),
+            'data' => new DepartmentResource(
+                $department->load(['facility', 'head'])
+            ),
         ], 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Department $department): Department 
+    public function show(Department $department): DepartmentResource
     {
-
-        return $this->department_service->show($department);
+        return new DepartmentResource(
+            $this->department_service->show($department)
+        );
     }
 
     /**
@@ -62,27 +66,24 @@ class DepartmentController extends Controller
      */
     public function update(UpdateDepartmentRequest $request, Department $department): JsonResponse
     {
-            $department = $this->department_service->update(
+        $department = $this->department_service->update(
             $department,
             $request->validated()
         );
 
         return response()->json([
             'message' => __('Department updated successfully.'),
-            'data' => $department->load([
-                'facility',
-                'head',
-            ]),
+            'data' => new DepartmentResource(
+                $department->load(['facility', 'head'])
+            ),
         ]);
-
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Department $department): JsonResponse 
+    public function destroy(Department $department): JsonResponse
     {
-
         $this->department_service->destroy($department);
 
         return response()->json([
