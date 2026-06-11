@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->uuid()->unique();
             $table->string('name');
-            $table->string('type');
+            $table->text('description');
+            $table->enum('type', [
+                'government', 'un_agency', 'international_ngo', 'local_ngo', 'private',
+            ]);
             $table->timestamps();
         });
     }

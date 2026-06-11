@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Organization;
 
+use App\Enums\OrganizationType;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Enum;
 
 class UpdateOrganizationRequest extends FormRequest
 {
@@ -22,9 +24,14 @@ class UpdateOrganizationRequest extends FormRequest
      */
     public function rules(): array
     {
-         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'type' => ['sometimes', 'required', 'string', 'max:255'],
+        return [
+            'name' => ['sometimes', 'array'],
+            'name.en' => ['sometimes', 'string', 'max:255'],
+            'name.ar' => ['sometimes', 'string', 'max:255'],
+            'description' => ['nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
+            'type' => ['sometimes', new Enum(OrganizationType::class)],
         ];
     }
 }
