@@ -11,15 +11,19 @@ return new class extends Migration
     {
         Schema::table('facilities', function (Blueprint $table) {
             $table->json('name')->change();
+            $table->json('description')->nullable()->change();
         });
 
         DB::table('facilities')->get()->each(function ($item) {
-            if ($item->name && !str_starts_with($item->name, '{')) {
-                DB::table('facilities')
-                    ->where('id', $item->id)
-                    ->update([
-                        'name' => json_encode(['en' => $item->name, 'ar' => $item->name])
-                    ]);
+              $update = [];
+            if ($item->name && ! str_starts_with($item->name, '{')) {
+                $update['name'] = json_encode(['en' => $item->name, 'ar' => $item->name]);
+            }
+            if ($item->description && ! str_starts_with($item->description, '{')) {
+                $update['description'] = json_encode(['en' => $item->description, 'ar' => $item->description]);
+            }
+            if (! empty($update)) {
+                DB::table('facilities')->where('id', $item->id)->update($update);
             }
         });
     }
@@ -28,6 +32,7 @@ return new class extends Migration
     {
         Schema::table('facilities', function (Blueprint $table) {
             $table->string('name')->change();
+            $table->text('description')->nullable()->change();
         });
     }
 };

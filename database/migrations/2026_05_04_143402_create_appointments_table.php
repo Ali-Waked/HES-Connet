@@ -18,8 +18,17 @@ return new class extends Migration
             $table->foreignId('patient_id')->constrained();
             $table->foreignId('facility_id')->constrained();
             $table->dateTime('date');
-            $table->enum('status', ['booked','completed','cancelled','rescheduled']);
-            $table->timestamps();
+            $table->enum('status', [
+                'scheduled',
+                'confirmed',
+                'checked_in',
+                'in_progress',
+                'completed',
+                'cancelled',
+                'no_show',
+                'rescheduled',
+            ]);
+        $table->timestamps();
         });
     }
 

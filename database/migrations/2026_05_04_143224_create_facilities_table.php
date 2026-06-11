@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->uuid()->unique();
             $table->string('name');
-            $table->decimal('latitude',10,7);
-            $table->decimal('longitude',10,7);
-            $table->enum('facility_type', ['hospital','clinic','pharmacy','medical_point']);
+            $table->text('description')->nullable();
+            $table->decimal('latitude', 10, 7);
+            $table->decimal('longitude', 10, 7);
+            $table->enum('facility_type', ['hospital', 'clinic', 'pharmacy', 'medical_point']);
             $table->foreignId('organization_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('facilities')->nullOnDelete();
             $table->timestamps();
