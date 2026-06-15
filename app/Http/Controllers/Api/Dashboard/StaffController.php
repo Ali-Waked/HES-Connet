@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\CheckEmailRequest;
 use App\Http\Requests\Staff\StoreStaffRequest;
 use App\Http\Requests\Staff\UpdateStaffRequest;
 use App\Http\Resources\StaffResource;
@@ -34,11 +35,19 @@ class StaffController extends Controller
         );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreStaffRequest $request): JsonResponse
+    public function checkEmail(CheckEmailRequest $request): JsonResponse
     {
+        return response()->json(
+            $this->staff_service->checkEmail($request->input('email'))
+            );
+            }
+
+            /**
+             * Store a newly created resource in storage.
+            */
+            public function store(StoreStaffRequest $request): JsonResponse
+            {
+        info('hi in controller');
         $staff = $this->staff_service->create($request->validated());
 
         return response()->json([

@@ -15,15 +15,45 @@ class StaffResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    {
-        $isAdmin = $request->is('api/admin/*') || ($request->user()?->role?->name === 'admin');
+{
+    return [
+        'id' => $this->id,
+        'uuid' => $this->uuid,
+        'experience_years' => $this->experience_years,
+        'consultation_fee' => $this->consultation_fee,
+        'status' => $this->user?->last_seen_at,
 
-        return array_merge([
-            'id' => $this->id,
-            'uuid' => $this->uuid,
-            'experience_years' => $this->experience_years,
-            'consultation_fee' => $this->consultation_fee,
-            'user' => new UserResource($this->whenLoaded('user')),
-        ], $this->mapTranslatable(['specialization', 'bio'], $isAdmin));
-    }
+        'user' => new UserResource(
+            $this->whenLoaded('user')
+        ),
+
+        'facilities' => $this->whenLoaded(
+            'facilities',
+            fn () => $this->facilities->map(function ($facility) {
+
+                $position = $facility->pivot?->position;
+                $department = $facility->pivot?->department;
+
+                return [
+                    'uuid' => $facility->uuid,
+
+                    'name' => $facility->getTranslations('name'),
+
+                    'position' => $position ? [
+                        'uuid' => $position->uuid,
+                        'name' => $position->getTranslations('name'),
+                    ] : null,
+                    'department' => [
+                        'uuid' => $department->uuid,
+                        'name' => $department->getTranslations('name'),
+                    ]
+                ];
+            })->values()
+        ),
+
+        'specialization' => $this->getTranslations('specialization'),
+
+        'bio' => $this->getTranslations('bio'),
+    ];
+}
 }

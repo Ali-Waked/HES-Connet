@@ -31,6 +31,7 @@ class UpdateStaffRequest extends FormRequest
             'bio.en' => ['required_with:bio', 'string'],
             'bio.ar' => ['required_with:bio', 'string'],
             'consultation_fee' => ['nullable', 'numeric', 'min:0'],
+            'staff_position_uuid' => ['nullable', 'exists:staff_positions,uuid'],
         ];
     }
 }
