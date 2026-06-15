@@ -1,27 +1,53 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\CategoriesType;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Override;
-
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['name','type'])]
+#[Translatable(['name', 'description'])]
 class Category extends Model
 {
-    use HasTranslations;
+    use HasTranslations, HasUuids;
 
-    public array $translatable = ['name'];
+    // public array $translatable = ['name', 'description'];
+
+    protected $fillable = [
+        'uuid',
+        'name',
+        'description',
+        'type',
+        'is_active',
+    ];
+
     protected function casts(): array
     {
-        return ['type' => CategoriesType::class];
+        return [
+            'name' => 'array',
+            'description' => 'array',
+            'type' => CategoriesType::class,
+            'is_active' => 'boolean',
+        ];
     }
 
-    public function articles():HasMany {
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
+    public function articles(): HasMany
+    {
         return $this->hasMany(Article::class);
     }
 }

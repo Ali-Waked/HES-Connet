@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
@@ -7,23 +9,24 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ArticleResource extends JsonResource
 {
-    use HasTranslatableFields;
-
     /**
-     * Transform the resource into an array.
-     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
-        $isAdmin = $request->is('api/admin/*') || ($request->user()?->role?->name === 'admin');
-
-        return array_merge([
-            'id' => $this->id,
+        return [
             'uuid' => $this->uuid,
-            'status' => $this->status,
+            'title' => $this->getTranslations('title'),
+            'content' => $this->getTranslations('content'),
+            'status' => $this->status?->value,
             'views' => $this->views,
+            'cover_image' => $this->cover_image,
             'category' => new CategoryResource($this->whenLoaded('category')),
-        ], $this->mapTranslatable(['title', 'content'], $isAdmin));
+            'author' => new UserResource($this->whenLoaded('author')),
+            'tags' => TagResource::collection($this->whenLoaded('tags')),
+            'gallery_images' => ArticleImageResource::collection($this->whenLoaded('images')),
+            'created_at' => $this->created_at,
+            'published_at' => $this->published_at,
+        ];
     }
 }

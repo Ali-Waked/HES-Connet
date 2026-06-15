@@ -7,22 +7,29 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class CategoryResource extends JsonResource
+class TagResource extends JsonResource
 {
     use HasTranslatableFields;
-    
+
     /**
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
-        $isAdmin = $request->is('api/admin/*') || (($request->user()?->role?->name['en'] ?? null) === 'admin');
-
-        return array_merge([
+        return [
             'uuid' => $this->uuid,
+
+            'name' => $this->getTranslations('name'),
+
+            'description' => $this->description,
+
             'type' => $this->type,
+
             'is_active' => $this->is_active,
+
+            'articles_count' => $this->whenCounted('articles'),
+
             'created_at' => $this->created_at,
-        ], $this->mapTranslatable(['name','description'], $isAdmin));
+        ];
     }
 }
