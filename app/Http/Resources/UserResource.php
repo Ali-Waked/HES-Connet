@@ -17,12 +17,15 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'uuid' => $this->uuid,
-            'name' => $this->name,
+            'name' => $this->getTranslations('name'),
             'email' => $this->email,
             'provider' => $this->provider,
+            'avatar' => $this->avatar,
+            'cover_image' => $this->cover_image,
             'last_seen_at' => $this->last_seen_at,
             'role' => new RoleResource($this->whenLoaded('role')),
             'profile' => new UserProfilesResource($this->whenLoaded('profile')),
+            'city' => new CityResource($this->whenLoaded('city'))
         ];
     }
 }

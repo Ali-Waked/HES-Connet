@@ -9,15 +9,19 @@ use App\Models\OrganizationUser;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+// use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Spatie\Translatable\HasTranslations;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -36,21 +40,25 @@ use Laravel\Sanctum\HasApiTokens;
  * @property-read Role|null $role
  * @property-read UserProfiles|null $profile
  */
-#[Fillable(['name', 'email', 'password', 'role_id', 'provider', 'provider_id', 'last_seen_at'])]
+#[Fillable(['name', 'email', 'password', 'role_id', 'provider', 'provider_id', 'last_seen_at', 'city_id','avatar','cover_image'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable
 {
+    use HasTranslations;
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasUuids, Notifiable;
 
+    public array $translatable = ['name'];
     protected function casts(): array
     {
+
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'provider' => Provider::class,
             'last_seen_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
+            'name' => 'array',
         ];
     }
 
@@ -62,6 +70,11 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(City::class);
     }
 
     public function profile(): HasOne
@@ -119,5 +132,30 @@ class User extends Authenticatable
         return $this->belongsToMany(Organization::class, 'organization_user')
             ->withPivot('status')
             ->withTimestamps();
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        $roleName = $this->role?->name['en'] ?? null;
+
+        return in_array($roleName, (array) $roles);
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->role?->permissions()->where('key', $permission)->exists() ?? false;
+    }
+
+    public function allPermissions(): Collection
+    {
+        return $this->role?->permissions ?? collect();
+    }
+     public function getCoverImageAttribute(?string $value): ?string
+    {
+        return $value ? Storage::disk('public')->url($value) : null;
+    }
+     public function getAvatarAttribute(?string $value): ?string
+    {
+        return $value ? Storage::disk('public')->url($value) : null;
     }
 }

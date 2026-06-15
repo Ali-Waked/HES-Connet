@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Dashboard;
 
+use App\Actions\Dashboard\GetUserStats;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
@@ -14,8 +15,10 @@ use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly UserService $user_service)
-    {
+    public function __construct(
+        private readonly UserService $user_service,
+        private readonly GetUserStats $getUserStats,
+    ) {
     }
 
     /**
@@ -78,6 +81,14 @@ class UserController extends Controller
 
         return response()->json([
             'message' => __('User deleted successfully.'),
+        ]);
+    }
+
+    public function stats(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->getUserStats->execute(),
         ]);
     }
 }
