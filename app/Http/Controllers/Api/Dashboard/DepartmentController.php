@@ -9,6 +9,7 @@ use App\Http\Requests\Department\StoreDepartmentRequest;
 use App\Http\Requests\Department\UpdateDepartmentRequest;
 use App\Http\Resources\DepartmentResource;
 use App\Models\Department;
+use App\Models\Facility;
 use App\Services\DepartmentService;
 use Illuminate\Http\JsonResponse;
 
@@ -54,11 +55,18 @@ class DepartmentController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Department $department): DepartmentResource
+    public function show(Department $department): JsonResponse
     {
-        return new DepartmentResource(
-            $this->department_service->show($department)
-        );
+        $department = $this->department_service->show($department);
+        return response()->json([
+                'id' => $department->id,
+                'uuid' => $department->uuid,
+                'is_active' => $department->is_active,
+                'facility_id' => $department->facility->uuid,
+                'image' => $department->image,
+                'name' => $department->getTranslations('name'),
+                'description' => $department->getTranslations('description'),
+        ]);
     }
 
     /**
@@ -90,4 +98,24 @@ class DepartmentController extends Controller
             'message' => __('Department deleted successfully.'),
         ]);
     }
+
+    public function stats():JsonResponse
+    {
+        return response()->json(
+            $this->department_service->getStats()
+        );
+    }
+
+    public function lookup()
+{
+
+    $facility = Facility::whereUuid(request()->facility_id)->firstOrFail();
+
+    return DepartmentResource::collection(
+    $facility->departments()
+        ->where('is_active', true)
+        ->orderBy('name->ar')
+        ->get()
+);
+}
 }

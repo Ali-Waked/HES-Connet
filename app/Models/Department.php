@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property-read string $uuid
@@ -21,11 +23,17 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
  * @property-read \App\Models\Staff|null $head
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\FacilityStaff> $facilityStaff
  */
-#[Fillable(['name','facility_id','head_id'])]
-#[Translatable(['name'])]
+#[Fillable(['name','facility_id','head_id','image','description','is_active'])]
+#[Translatable(['name','description'])]
 class Department extends Model
 {
     use HasUuids, HasTranslations;
+
+    protected function cats():array {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 
      public function uniqueIds(): array
     {
@@ -50,5 +58,9 @@ class Department extends Model
     public function facilityStaff(): HasMany
     {
         return $this->hasMany(FacilityStaff::class);
+    }
+
+    protected function image():Attribute {
+        return Attribute::make( get: fn ($value) => $value ? Storage::disk('public')->url($value) : null);
     }
 }

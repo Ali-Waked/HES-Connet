@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Translatable\HasTranslations;
 
 /**
@@ -39,13 +40,13 @@ use Spatie\Translatable\HasTranslations;
  * @property-read Collection<int, JobPost> $jobPosts
  * @property-read Collection<int, MedicationRequest> $medicationRequests
  */
-#[Fillable(['name', 'latitude', 'longitude', 'facility_type', 'organization_id', 'parent_id', 'created_by', 'status', 'approval_status'])]
+#[Fillable(['name', 'latitude', 'longitude', 'facility_type', 'organization_id', 'parent_id', 'created_by', 'status', 'approval_status', 'cover_image', 'city_id'])]
 class Facility extends Model
 {
     use HasTranslations, HasUuids;
 
 
-    public array $translatable = ['name']; #description
+    public array $translatable = ['name', 'description'];
 
     protected function casts(): array
     {
@@ -83,6 +84,16 @@ class Facility extends Model
         return $this->hasMany(Facility::class, 'parent_id');
     }
 
+    public function headStaff(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'head_staff_id');
+    }
+
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(City::class);
+    }
+
     public function facilityImages(): HasMany
     {
         return $this->hasMany(FacilityImage::class);
@@ -101,6 +112,11 @@ class Facility extends Model
     public function departments(): HasMany
     {
         return $this->hasMany(Department::class);
+    }
+
+       public function getCoverImageAttribute(?string $value): ?string
+    {
+        return $value ? Storage::disk('public')->url($value) : null;
     }
 
     // public function appointments(): HasMany

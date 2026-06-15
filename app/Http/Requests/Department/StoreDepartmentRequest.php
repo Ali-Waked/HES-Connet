@@ -23,21 +23,27 @@ class StoreDepartmentRequest extends FormRequest
     public function rules(): array
     {
         return [
+    
+            'name' => ['required','array'],
+            'name.en' => ['required', 'string', 'max:255'],
+            'name.ar' => ['required', 'string', 'max:255'],
+            
+            'description' => ['nullable','array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
+
             'facility_id' => [
                 'required',
                 'exists:facilities,uuid',
             ],
 
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
             'head_id' => [
-                'required',
+                'nullable',
                 'exists:staff,uuid',
             ],
+
+            'is_active' => ['nullable','boolean'],
+            'image' => ['required','image']
         ];
     }
 }

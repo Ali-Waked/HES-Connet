@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
 /**
  * @property-read int $id
@@ -17,12 +18,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read \App\Models\Facility $facility
  * @property-read \App\Models\Department|null $department
  */
-class FacilityStaff extends Model
+class FacilityStaff extends Pivot
 {
+     protected $table = 'facility_staff';
     protected $fillable = [
         'staff_id',
         'facility_id',
         'department_id',
+        'position_id',
         'position',
     ];
 
@@ -39,5 +42,10 @@ class FacilityStaff extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function position()
+    {
+        return $this->belongsTo(Position::class);
     }
 }

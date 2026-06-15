@@ -23,24 +23,27 @@ class UpdateDepartmentRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'name' => ['sometimes','required','array'],
+            'name.en' => ['sometimes','required', 'string', 'max:255'],
+            'name.ar' => ['sometimes','required', 'string', 'max:255'],
+            
+            'description' => ['nullable','array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
+
             'facility_id' => [
-                'sometimes',
-                'required',
+                'sometimes','required',
                 'exists:facilities,uuid',
             ],
 
-            'name' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-            ],
-
             'head_id' => [
-                'sometimes',
-                'required',
+                'nullable',
                 'exists:staff,uuid',
             ],
+
+            'is_active' => ['nullable','boolean'],
+            'image' => ['sometimes','required','image']
         ];
+
     }
 }

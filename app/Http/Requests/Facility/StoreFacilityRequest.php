@@ -16,11 +16,12 @@ class StoreFacilityRequest extends FormRequest
 
     public function rules(): array
     {
+        info($this->all());
     return [
         'name' => ['required','array'],
         'name.en' => ['required', 'string', 'max:255'],
         'name.ar' => ['required', 'string', 'max:255'],
-        
+
         'description' => ['nullable','array'],
         'description.en' => ['nullable', 'string'],
         'description.ar' => ['nullable', 'string'],
@@ -55,10 +56,13 @@ class StoreFacilityRequest extends FormRequest
             'required',
             'exists:organizations,uuid',
         ],
-
         'parent_id' => [
             'nullable',
             'exists:facilities,uuid',
+        ],
+        'head_staff_id' => [
+            'nullable',
+            'exists:staff,uuid',
         ],
 
         'latitude' => [
@@ -72,6 +76,13 @@ class StoreFacilityRequest extends FormRequest
             'numeric',
             'between:-180,180',
         ],
+        'cover_image' => ['required', 'image', 'max:5120'],
+
+        'gallery_images' => ['nullable', 'array'],
+        'gallery_images.*' => ['image', 'max:5120'],
+
+        'files' => ['nullable', 'array'],
+        'files.*' => ['file', 'max:5120'],
     ];
 }
 }

@@ -43,7 +43,6 @@ class FacilityController extends Controller
     public function store(StoreFacilityRequest $request): Facility
     {
         $facility = $this->facility_service->create($request->validated());
-
         return $facility;
     }
 
@@ -96,7 +95,7 @@ class FacilityController extends Controller
         ]);
     }
 
-    public function stats()
+    public function stats():JsonResponse
     {
         return response()->json(
             $this->facility_service->getStats()

@@ -16,7 +16,7 @@ class FacilityResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $isAdmin = $request->is('api/admin/*') || ($request->user()?->role?->name === 'admin');
+        $isAdmin = $request->is('api/admin/*') || (($request->user()?->role?->name['en'] ?? null) === 'admin');
 
         return array_merge([
             'id' => $this->id,
@@ -26,11 +26,12 @@ class FacilityResource extends JsonResource
             'approval_status'=>$this->approval_status,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
+            'cover_image' => $this->cover_image,
             'organization' => new OrganizationResource($this->whenLoaded('organization')),
             'parent' => new FacilityResource($this->whenLoaded('parent')),
             'children' => FacilityResource::collection($this->whenLoaded('children')),
             'images' => FacilityImageResource::collection($this->whenLoaded('facilityImages')),
-            'documents' => FacilityDocumentResource::collection($this->whenLoaded('facilityDocuments')),
+            'files' => FacilityDocumentResource::collection($this->whenLoaded('facilityDocuments')),
             'departments' => DepartmentResource::collection($this->whenLoaded('departments')),
         ], $this->mapTranslatable(['name'], $isAdmin));
     }
