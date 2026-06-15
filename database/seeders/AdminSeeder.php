@@ -9,18 +9,18 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
+        $role = Role::firstOrCreate(
+            ['name->en' => 'super_admin'],
+            ['name' => ['en' => 'super_admin', 'ar' => 'مشرف عام']]
+        );
+
         User::create([
             'name' => 'super Admin',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('password'),
-        ]);
-        Role::create([
-            'name' => 'super_admin',
+            'role_id' => $role->id,
         ]);
     }
 }

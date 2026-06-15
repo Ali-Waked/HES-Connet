@@ -15,8 +15,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        $this->call([AdminSeeder::class]);
+        $this->call([
+            // PermissionSeeder::class,
+            // RolePermissionSeeder::class,
+            // AdminSeeder::class,
+            CitySeeder::class,
+            PageSeeder::class,
+            // StaffPositionSeeder::class,
+        ]);
     }
 }
