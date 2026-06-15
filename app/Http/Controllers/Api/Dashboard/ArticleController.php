@@ -1,63 +1,83 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Article\StoreArticleRequest;
+use App\Http\Requests\Article\UpdateArticleRequest;
+use App\Http\Resources\ArticleResource;
 use App\Models\Article;
 use App\Services\ArticleService;
-use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
 
 class ArticleController extends Controller
 {
-    public function __construct(private readonly ArticleService $article_service)
+    public function __construct(
+        private readonly ArticleService $article_service
+    ) {}
+
+    public function index()
     {
-    }
-    /**
-     * Display a listing of the resource.
-     */
-    public function index():LengthAwarePaginator
-    {
-        return $this->article_service->paginate(
-            request('per_page', 15),
-            request('search'),
-            request('category_id'),
-            request('auth_id')
+        return ArticleResource::collection(
+            $this->article_service->paginate(
+                (int) request('per_page', 15),
+                request('search'),
+                request('status'),
+                request('category_id'),
+                request('author_id'),
+            )
         );
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreArticleRequest $request): JsonResponse
     {
-        //
+        $article = $this->article_service->create(
+            $request->validated()
+        );
+
+        return response()->json([
+            'message' => __('Article created successfully.'),
+            'data' => new ArticleResource($article),
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Article $article):Article
+    public function show(Article $article): JsonResponse
     {
-        return $this->article_service->show($article);
+        $article = $this->article_service->show($article);
+
+        return response()->json([
+            'data' => new ArticleResource($article),
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Article $article)
+    public function update(UpdateArticleRequest $request, Article $article): JsonResponse
     {
-        //
+        $article = $this->article_service->update(
+            $article,
+            $request->validated()
+        );
+
+        return response()->json([
+            'message' => __('Article updated successfully.'),
+            'data' => new ArticleResource($article),
+        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Article $article)
+    public function destroy(Article $article): JsonResponse
     {
         $this->article_service->destroy($article);
+
         return response()->json([
-            'message'=> __('Article deleted successfully.')
+            'message' => __('Article deleted successfully.'),
         ]);
+    }
+
+    public function stats(): JsonResponse
+    {
+        return response()->json(
+            $this->article_service->getStats()
+        );
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\AccountStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,6 +28,7 @@ class Patient extends Model
     protected $fillable = [
         'user_id',
         'medical_history',
+        'status',
     ];
 
     public function user(): BelongsTo
@@ -56,5 +59,25 @@ class Patient extends Model
     public function facilityReviews(): HasMany
     {
         return $this->hasMany(FacilityReview::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'status' => AccountStatus::class,
+        ];
+    }
+
+    public function scopeOfStatus(Builder $query, string $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        return $query->whereHas('user', fn (Builder $q) => $q
+            ->where('name', 'like', "%{$term}%")
+            ->orWhere('email', 'like', "%{$term}%")
+        );
     }
 }
