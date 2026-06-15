@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Appointment;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreAppointmentRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'staff_uuid' => ['required', 'exists:staff,uuid'],
+            'patient_uuid' => ['required', 'exists:users,uuid'],
+            'facility_uuid' => ['required', 'exists:facilities,uuid'],
+            'start_at' => ['required', 'date', 'after_or_equal:now'],
+            'end_at' => ['required', 'date', 'after:start_at'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ];
+    }
+}
