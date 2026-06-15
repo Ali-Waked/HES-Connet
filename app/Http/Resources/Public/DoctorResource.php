@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Resources\Public;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class DoctorResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'uuid' => $this->uuid,
+            'name' => $this->user?->getTranslations('name'),
+            'specialization' => $this->getTranslations('specialization'),
+            'bio' => $this->getTranslations('bio'),
+            'facilities_count' => $this->whenCounted('facilities_count'),
+            'primary_facility' => $this->whenLoaded('facilities', fn () => $this->facilities->first() ? [
+                'uuid' => $this->facilities->first()->uuid,
+                'name' => $this->facilities->first()->getTranslations('name'),
+                'facility_type' => $this->facilities->first()->facility_type?->value,
+            ] : null),
+        ];
+    }
+}
