@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Dashboard;
 
+use App\Actions\Dashboard\GetPermissionStats;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Permission\StorePermissionRequest;
 use App\Http\Requests\Permission\UpdatePermissionRequest;
@@ -14,8 +15,10 @@ use Illuminate\Http\JsonResponse;
 
 class PermissionController extends Controller
 {
-    public function __construct(private readonly PermissionService $permission_service)
-    {
+    public function __construct(
+        private readonly PermissionService $permission_service,
+        private readonly GetPermissionStats $getPermissionStats,
+    ) {
     }
 
     /**
@@ -26,7 +29,7 @@ class PermissionController extends Controller
     public function index()
     {
         return PermissionResource::collection(
-            $this->permission_service->paginate((int) request('per_page', 15))
+            $this->permission_service->paginate((int) request('per_page', 15),request('search'),)
         );
     }
 
@@ -75,6 +78,14 @@ class PermissionController extends Controller
 
         return response()->json([
             'message' => __('Permission deleted successfully.'),
+        ]);
+    }
+
+    public function stats(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->getPermissionStats->execute(),
         ]);
     }
 }

@@ -22,7 +22,13 @@ class UpdatePermissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255', 'unique:permissions,name,' . $this->route('permission')],
+            'key' => ['sometimes', 'required', 'string', 'max:255', 'unique:permissions,key,' . $this->route('permission')],
+            'name' => ['sometimes', 'array'],
+            'name.en' => ['required_with:name', 'string'],
+            'name.ar' => ['required_with:name', 'string'],
+            'description' => ['sometimes', 'array'],
+            'description.en' => ['required_with:description', 'string'],
+            'description.ar' => ['required_with:description', 'string'],
         ];
     }
 }

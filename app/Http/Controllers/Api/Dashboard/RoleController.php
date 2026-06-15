@@ -26,7 +26,7 @@ class RoleController extends Controller
     public function index()
     {
         return RoleResource::collection(
-            $this->role_service->paginate((int) request('per_page', 15))
+            $this->role_service->paginate((int) request('per_page', 15),request('search'))
         );
     }
 
@@ -75,6 +75,14 @@ class RoleController extends Controller
 
         return response()->json([
             'message' => __('Role deleted successfully.'),
+        ]);
+    }
+
+      public function stats(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->role_service->getStats(),
         ]);
     }
 }

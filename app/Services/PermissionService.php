@@ -9,10 +9,11 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PermissionService
 {
-    public function paginate(int $perPage = 15): LengthAwarePaginator
+    public function paginate(int $perPage = 15,?string $search = null): LengthAwarePaginator
     {
         return Permission::query()
             ->latest()
+            ->when($search, fn ($query) => $query->where('key', 'like', "%{$search}%"))
             ->paginate($perPage);
     }
 
