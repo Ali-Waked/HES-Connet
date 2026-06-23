@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\StaffPosition;
+use App\Models\Position;
 use Illuminate\Database\Seeder;
 
 class StaffPositionSeeder extends Seeder
@@ -45,7 +45,7 @@ class StaffPositionSeeder extends Seeder
         ];
 
         foreach ($positions as $position) {
-            StaffPosition::create($position);
+            Position::create($position);
         }
     }
 }

@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->alias([
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+            'dashboard.access' => \App\Http\Middleware\DashboardAccessMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

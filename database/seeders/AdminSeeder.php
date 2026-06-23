@@ -12,15 +12,21 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         $role = Role::firstOrCreate(
-            ['name->en' => 'super_admin'],
-            ['name' => ['en' => 'super_admin', 'ar' => 'مشرف عام']]
+            ['slug' => 'super_admin'],
+            [
+                'name' => ['en' => 'super_admin', 'ar' => 'مشرف عام'],
+                'slug' => 'super_admin',
+                'scope' => 'system',
+                'is_system' => true,
+            ]
         );
 
-        User::create([
+        $user = User::create([
             'name' => 'super Admin',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('password'),
-            'role_id' => $role->id,
         ]);
+
+        $user->systemRoles()->attach($role->id);
     }
 }

@@ -630,6 +630,45 @@ return [
         ],
     ],
 
+    'facility_dashboard' => [
+        [
+            'key' => 'facility_dashboard.view',
+            'name' => [
+                'en' => 'View Facility Dashboard',
+                'ar' => 'عرض لوحة تحكم المنشأة',
+            ],
+            'description' => [
+                'en' => 'Allows access to the facility owner dashboard',
+                'ar' => 'السماح بالوصول إلى لوحة تحكم مالك المنشأة',
+            ],
+        ],
+    ],
+
+    'medicines' => [
+        [
+            'key' => 'medicines.view',
+            'name' => [
+                'en' => 'View Medicines',
+                'ar' => 'عرض الأدوية',
+            ],
+            'description' => [
+                'en' => 'Allows viewing medicines and using lookup',
+                'ar' => 'السماح بعرض الأدوية واستخدام البحث',
+            ],
+        ],
+        [
+            'key' => 'medicines.manage',
+            'name' => [
+                'en' => 'Manage Medicines',
+                'ar' => 'إدارة الأدوية',
+            ],
+            'description' => [
+                'en' => 'Allows creating, updating, and deleting medicines',
+                'ar' => 'السماح بإنشاء وتحديث وحذف الأدوية',
+            ],
+        ],
+    ],
+
     'profile' => [
         [
             'key' => 'profile.view',
@@ -653,5 +692,177 @@ return [
                 'ar' => 'السماح بتحديث معلومات الملف الشخصي',
             ],
         ],
+    ],
+
+    'reviews' => [
+        [
+            'key' => 'reviews.view',
+            'name' => [
+                'en' => 'View Reviews',
+                'ar' => 'عرض التقييمات',
+            ],
+            'description' => [
+                'en' => 'Allows viewing reviews',
+                'ar' => 'السماح بعرض التقييمات',
+            ],
         ],
+        [
+            'key' => 'reviews.manage',
+            'name' => [
+                'en' => 'Manage Reviews',
+                'ar' => 'إدارة التقييمات',
+            ],
+            'description' => [
+                'en' => 'Allows creating, updating, and deleting reviews',
+                'ar' => 'السماح بإنشاء وتحديث وحذف التقييمات',
+            ],
+        ],
+        [
+            'key' => 'reviews.approve',
+            'name' => [
+                'en' => 'Approve Reviews',
+                'ar' => 'الموافقة على التقييمات',
+            ],
+            'description' => [
+                'en' => 'Allows approving reviews',
+                'ar' => 'السماح بالموافقة على التقييمات',
+            ],
+        ],
+        [
+            'key' => 'reviews.reject',
+            'name' => [
+                'en' => 'Reject Reviews',
+                'ar' => 'رفض التقييمات',
+            ],
+            'description' => [
+                'en' => 'Allows rejecting reviews',
+                'ar' => 'السماح برفض التقييمات',
+            ],
+        ],
+    ],
+
+    'medication_requests' => [
+        [
+            'key' => 'medication_requests.view',
+            'name' => [
+                'en' => 'View Medication Requests',
+                'ar' => 'عرض طلبات الأدوية',
+            ],
+            'description' => [
+                'en' => 'Allows viewing medication requests',
+                'ar' => 'السماح بعرض طلبات الأدوية',
+            ],
+        ],
+        [
+            'key' => 'medication_requests.manage',
+            'name' => [
+                'en' => 'Manage Medication Requests',
+                'ar' => 'إدارة طلبات الأدوية',
+            ],
+            'description' => [
+                'en' => 'Allows creating, updating, and deleting medication requests',
+                'ar' => 'السماح بإنشاء وتحديث وحذف طلبات الأدوية',
+            ],
+        ],
+        [
+            'key' => 'medication_requests.approve',
+            'name' => [
+                'en' => 'Approve Medication Requests',
+                'ar' => 'الموافقة على طلبات الأدوية',
+            ],
+            'description' => [
+                'en' => 'Allows approving medication requests',
+                'ar' => 'السماح بالموافقة على طلبات الأدوية',
+            ],
+        ],
+        [
+            'key' => 'medication_requests.reject',
+            'name' => [
+                'en' => 'Reject Medication Requests',
+                'ar' => 'رفض طلبات الأدوية',
+            ],
+            'description' => [
+                'en' => 'Allows rejecting medication requests',
+                'ar' => 'السماح برفض طلبات الأدوية',
+            ],
+        ],
+    ],
+
+    'reports' => [
+        [
+            'key' => 'reports.view',
+            'name' => [
+                'en' => 'View Reports',
+                'ar' => 'عرض التقارير',
+            ],
+            'description' => [
+                'en' => 'Allows viewing reports',
+                'ar' => 'السماح بعرض التقارير',
+            ],
+        ],
+        [
+            'key' => 'reports.export',
+            'name' => [
+                'en' => 'Export Reports',
+                'ar' => 'تصدير التقارير',
+            ],
+            'description' => [
+                'en' => 'Allows exporting reports',
+                'ar' => 'السماح بتصدير التقارير',
+            ],
+        ],
+    ],
+
+    'analytics' => [
+        [
+            'key' => 'analytics.view',
+            'name' => [
+                'en' => 'View Analytics',
+                'ar' => 'عرض التحليلات',
+            ],
+            'description' => [
+                'en' => 'Allows viewing analytics data',
+                'ar' => 'السماح بعرض بيانات التحليلات',
+            ],
+        ],
+    ],
+
+    'notifications' => [
+        [
+            'key' => 'notifications.view',
+            'name' => [
+                'en' => 'View Notifications',
+                'ar' => 'عرض الإشعارات',
+            ],
+            'description' => [
+                'en' => 'Allows viewing notifications',
+                'ar' => 'السماح بعرض الإشعارات',
+            ],
+        ],
+        [
+            'key' => 'notifications.manage',
+            'name' => [
+                'en' => 'Manage Notifications',
+                'ar' => 'إدارة الإشعارات',
+            ],
+            'description' => [
+                'en' => 'Allows managing notification settings',
+                'ar' => 'السماح بإدارة إعدادات الإشعارات',
+            ],
+        ],
+    ],
+
+    'activity_logs' => [
+        [
+            'key' => 'activity_logs.view',
+            'name' => [
+                'en' => 'View Activity Logs',
+                'ar' => 'عرض سجلات النشاط',
+            ],
+            'description' => [
+                'en' => 'Allows viewing activity logs',
+                'ar' => 'السماح بعرض سجلات النشاط',
+            ],
+        ],
+    ],
 ];
