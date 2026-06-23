@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('permissions', function (Blueprint $table) {
-            $table->uuid()->after('id');
+        Schema::table('pharmacy_medicines', function (Blueprint $table) {
+            $table->decimal('price', 10, 2)->nullable()->after('quantity');
+            $table->renameColumn('quantity', 'stock');
+
         });
     }
 
@@ -21,8 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('permissions', function (Blueprint $table) {
-            $table->dropColumn('uuid');
+        Schema::table('pharmacy_medicines', function (Blueprint $table) {
+            $table->dropColumn('price');
+            $table->renameColumn('stock', 'quantity');
         });
     }
 };

@@ -12,13 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('staff', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
             $table->uuid()->unique();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('specialization')->nullable();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->json('specialization')->nullable();
             $table->integer('experience_years')->nullable();
-            $table->text('bio')->nullable();
-            $table->decimal('consultation_fee',8,2)->nullable();
+            $table->json('bio')->nullable();
+            $table->decimal('consultation_fee', 8, 2)->nullable();
+            $table->string('status')->nullable();
+            $table->foreignId('staff_position_id')->nullable();
         });
     }
 

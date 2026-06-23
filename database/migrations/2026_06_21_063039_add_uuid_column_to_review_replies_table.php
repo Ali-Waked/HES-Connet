@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('roles', function (Blueprint $table) {
-            $table->uuid()->after('id');
+        Schema::table('review_replies', function (Blueprint $table) {
+            $table->uuid()->unique()->after('id');
         });
     }
 
@@ -21,7 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('roles', function (Blueprint $table) {
+        Schema::table('review_replies', function (Blueprint $table) {
+            $table->dropUnique(['uuid']);
             $table->dropColumn('uuid');
         });
     }

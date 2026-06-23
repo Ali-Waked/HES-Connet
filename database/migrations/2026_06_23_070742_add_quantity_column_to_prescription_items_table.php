@@ -1,26 +1,28 @@
 <?php
 
-declare(strict_types=1);
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('prescription_items', function (Blueprint $table) {
-            $table->string('frequency')->after('dosage');
-            $table->string('route')->nullable()->after('duration');
-            $table->text('instructions')->nullable()->after('route');
+            $table->unsignedTinyInteger('quantity')->default(1)->after('instructions');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('prescription_items', function (Blueprint $table) {
-            $table->dropColumn(['frequency', 'route', 'instructions']);
+            $table->dropColumn(['quantity']);
         });
     }
 };

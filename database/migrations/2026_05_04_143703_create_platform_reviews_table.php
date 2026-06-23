@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('platform_reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
-            $table->integer('rating');
-            $table->text('comment');
-            $table->enum('status',['approved','hidden']);
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->unsignedTinyInteger('rating');
+            $table->text('comment')->nullable();
+            $table->boolean('is_featured')->default(false);
+            $table->enum('status',['pending','approved','rejected'])->default('pending');
+            $table->unique('user_id');
             $table->timestamps();
         });
     }

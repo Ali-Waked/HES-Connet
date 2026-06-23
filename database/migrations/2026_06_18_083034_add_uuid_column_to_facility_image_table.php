@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('facility_staff', function (Blueprint $table) {
-            $table->dropColumn('position');
+        Schema::table('facility_images', function (Blueprint $table) {
+            $table->uuid()->unique()->after('id');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('facility_staff', function (Blueprint $table) {
-            $table->string('position')->after('department_id');
+        Schema::table('facility_images', function (Blueprint $table) {
+            $table->dropColumn(['uuid']);
         });
     }
 };

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -10,15 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('staff', function (Blueprint $table) {
-            $table->string('status')->default('active')->after('consultation_fee');
+        Schema::table('medication_requests', function (Blueprint $table) {
+            $table->uuid()->unique()->after('id');
         });
     }
 
     public function down(): void
     {
-        Schema::table('staff', function (Blueprint $table) {
-            $table->dropColumn('status');
+        Schema::table('medication_requests', function (Blueprint $table) {
+            $table->dropColumn('uuid');
         });
     }
 };

@@ -11,21 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('messages', function (Blueprint $table) {
+        Schema::create('doctor_patient_conversations', function (Blueprint $table) {
             $table->id();
 
             $table->foreignId('conversation_id')
+                ->unique()
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->foreignId('sender_id')
-                ->constrained('users')
-                ->cascadeOnDelete();
+            $table->foreignId('doctor_id')
+                ->constrained('users');
 
-            $table->text('message');
-
-            $table->timestamp('edited_at')
-                ->nullable();
+            $table->foreignId('patient_id')
+                ->constrained('users');
 
             $table->timestamps();
         });
@@ -36,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('messages');
+        Schema::dropIfExists('doctor_patient_conversations');
     }
 };

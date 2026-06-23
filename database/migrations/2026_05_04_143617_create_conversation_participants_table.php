@@ -13,10 +13,24 @@ return new class extends Migration
     {
         Schema::create('conversation_participants', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('conversation_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->unique(['user_id','conversation_id']);
+
+            $table->foreignId('conversation_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->timestamp('last_read_at')
+                ->nullable();
+
             $table->timestamps();
+
+            $table->unique([
+                'conversation_id',
+                'user_id',
+            ]);
         });
     }
 

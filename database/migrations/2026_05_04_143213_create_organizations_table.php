@@ -13,12 +13,10 @@ return new class extends Migration
     {
         Schema::create('organizations', function (Blueprint $table) {
             $table->id();
-            $table->uuid()->unique();
-            $table->string('name');
-            $table->text('description');
-            $table->enum('type', [
-                'government', 'un_agency', 'international_ngo', 'local_ngo', 'private',
-            ]);
+            $table->uuid('uuid')->unique();
+            $table->json('name');
+            $table->json('description')->nullable();
+            $table->string('type');
             $table->timestamps();
         });
     }

@@ -11,13 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('doctor_schedules', function (Blueprint $table) {
+        Schema::create('message_attachments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('staff_id')->constrained()->cascadeOnDelete();
-            $table->integer('day_of_week');
-            $table->time('start_time');
-            $table->time('end_time');
-            $table->integer('slot_duration');
+
+            $table->foreignId('message_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('file');
+
+            $table->string('type')
+                ->nullable();
+
             $table->timestamps();
         });
     }
@@ -27,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('doctor_schedules');
+        Schema::dropIfExists('message_attachments');
     }
 };

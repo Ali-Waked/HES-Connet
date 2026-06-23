@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('appointment_reschedules', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('appointment_id')->constrained();
-            $table->dateTime('old_date');
-            $table->dateTime('new_date');
+            $table->foreignId('appointment_id')->constrained('appointments', 'id')->cascadeOnDelete();
+            $table->dateTime('old_start_at')->nullable();
+            $table->dateTime('old_end_at')->nullable();
+            $table->dateTime('new_start_at')->nullable();
+            $table->dateTime('new_end_at')->nullable();
+            $table->text('reason')->nullable();
             $table->timestamps();
         });
     }

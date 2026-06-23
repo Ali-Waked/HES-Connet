@@ -6,21 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
-            $table->enum('type',['support','doctor_patiant']);
+            $table->string('type');
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->string('status')->default('active');
+            $table->timestamp('last_message_at')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('conversations');

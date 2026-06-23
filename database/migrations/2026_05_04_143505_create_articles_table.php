@@ -14,17 +14,15 @@ return new class extends Migration
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
             $table->uuid()->unique();
-            $table->foreignId('auth_id')->constrained('staff')->cascadeOnDelete();
-            $table->string('title');
-            $table->enum('status', [
-                'draft',
-                'pending_review',
-                'published',
-                'archived',
-                'rejected',
-            ])->default('draft');
-            $table->text('content');
-            $table->foreignId('category_id')->constrained();
+            $table->foreignId('author_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->json('title');
+            $table->string('slug')->unique();
+            $table->string('status');
+            $table->json('content');
+            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->string('cover_image')->nullable();
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('published_at')->nullable();
             $table->integer('views')->default(0);
             $table->timestamps();
         });

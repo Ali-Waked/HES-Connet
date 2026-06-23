@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->uuid('uuid')->unique();
+            $table->json('name');
+            $table->string('slug')->unique()->nullable();
+            $table->string('scope')->nullable();
+            $table->json('description')->nullable();
+            $table->boolean('is_system')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

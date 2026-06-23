@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('facility_documents', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('facility_id')->constrained()->cascadeOnDelete();
             $table->string('file_url');
             $table->enum('status', ['pending','approved','rejected']);

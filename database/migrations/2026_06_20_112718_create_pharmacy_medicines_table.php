@@ -11,23 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('messages', function (Blueprint $table) {
+        Schema::create('pharmacy_medicines', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('conversation_id')
+            $table->uuid()->unique();
+            $table->foreignId('facility_id')
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->foreignId('sender_id')
-                ->constrained('users')
+            $table->foreignId('medicine_id')
+                ->constrained()
                 ->cascadeOnDelete();
 
-            $table->text('message');
-
-            $table->timestamp('edited_at')
-                ->nullable();
+            $table->boolean('is_available')
+                ->default(true);
+            $table->unsignedSmallInteger('quantity')->default(0);
 
             $table->timestamps();
+
+            $table->unique(['facility_id', 'medicine_id']);
         });
     }
 
@@ -36,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('messages');
+        Schema::dropIfExists('pharmacy_medicines');
     }
 };

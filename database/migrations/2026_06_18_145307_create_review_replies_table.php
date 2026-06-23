@@ -11,9 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('avatar')->nullable()->after('password');
-            $table->string('cover_image')->nullable()->after('avatar');
+        Schema::create('review_replies', function (Blueprint $table) {
+            $table->id();
+             $table->foreignId('review_id')
+        ->constrained()
+        ->cascadeOnDelete();
+
+    $table->text('reply');
+            $table->timestamps();
         });
     }
 
@@ -22,8 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['avatar','cover_image']);
-        });
+        Schema::dropIfExists('review_replies');
     }
 };

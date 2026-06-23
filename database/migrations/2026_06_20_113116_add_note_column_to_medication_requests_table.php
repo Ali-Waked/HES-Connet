@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('facility_staff', function (Blueprint $table) {
-            $table->foreignId('position_id')->after('staff_id')->constrained();
+        Schema::table('medication_requests', function (Blueprint $table) {
+            $table->text('notes')->nullable()->after('status');
+
+            $table->timestamp('dispensed_at')->nullable()->after('notes');
         });
     }
 
@@ -21,9 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('facility_staff', function (Blueprint $table) {
-            $table->dropForeign(['position_id']);
-            $table->dropColumn('position_id');
+        Schema::table('medication_requests', function (Blueprint $table) {
+            $table->dropColumn(['notes', 'dispensed_at']);
         });
     }
 };

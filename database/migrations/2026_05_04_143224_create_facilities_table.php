@@ -13,14 +13,22 @@ return new class extends Migration
     {
         Schema::create('facilities', function (Blueprint $table) {
             $table->id();
-            $table->uuid()->unique();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->decimal('latitude', 10, 7);
-            $table->decimal('longitude', 10, 7);
-            $table->enum('facility_type', ['hospital', 'clinic', 'pharmacy', 'medical_point']);
-            $table->foreignId('organization_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('parent_id')->nullable()->constrained('facilities')->nullOnDelete();
+            $table->uuid('uuid')->unique();
+            $table->json('name');
+            $table->json('description')->nullable();
+            $table->double('latitude')->nullable();
+            $table->double('longitude')->nullable();
+            $table->string('facility_type');
+            $table->string('status')->nullable();
+            $table->string('approval_status')->nullable();
+            $table->string('cover_image')->nullable();
+            $table->foreignId('organization_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('parent_id')->nullable()->constrained('facilities')->cascadeOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('head_staff_id')->nullable();
+            $table->foreignId('city_id')->nullable();
+            $table->foreignId('owner_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->boolean('is_featured')->default(false);
             $table->timestamps();
         });
     }

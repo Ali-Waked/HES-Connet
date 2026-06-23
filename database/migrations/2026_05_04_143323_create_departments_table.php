@@ -14,9 +14,12 @@ return new class extends Migration
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
             $table->uuid()->unique();
-            $table->foreignId('facility_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
+            $table->foreignId('facility_id')->constrained('facilities')->cascadeOnDelete();
+            $table->json('name');
+            $table->json('description')->nullable();
+            $table->string('image')->nullable();
             $table->foreignId('head_id')->nullable()->constrained('staff')->nullOnDelete();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

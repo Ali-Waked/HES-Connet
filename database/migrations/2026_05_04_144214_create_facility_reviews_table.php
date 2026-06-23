@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('facility_reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('facility_id')->constrained();
-            $table->foreignId('patient_id')->constrained();
-            $table->integer('rating');
+            $table->foreignId('facility_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
+            $table->unsignedTinyInteger('rating');
             $table->text('comment')->nullable();
+            $table->boolean('is_visible')->default(true);
+            $table->unique(['facility_id', 'patient_id']);
             $table->timestamps();
         });
     }

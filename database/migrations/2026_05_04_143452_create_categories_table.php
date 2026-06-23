@@ -13,8 +13,11 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->enum('type', ['article','story','job']);
+            $table->uuid()->unique();
+            $table->json('name');
+            $table->json('description')->nullable();
+            $table->string('type');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

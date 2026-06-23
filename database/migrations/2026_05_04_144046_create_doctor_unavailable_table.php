@@ -6,25 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('doctor_unavailable', function (Blueprint $table) {
+        Schema::create('staff_unavailabilities', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('staff_id')->constrained();
-            $table->date('date');
-            $table->string('reason')->nullable();
+            $table->foreignId('facility_staff_id')->constrained('facility_staff')->cascadeOnDelete();
+            $table->text('reason')->nullable();
+            $table->dateTime('start_at')->nullable();
+            $table->dateTime('end_at')->nullable();
             $table->timestamps();
+
+            $table->index(['facility_staff_id', 'start_at']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('doctor_unavailable');
+        Schema::dropIfExists('staff_unavailabilities');
     }
 };

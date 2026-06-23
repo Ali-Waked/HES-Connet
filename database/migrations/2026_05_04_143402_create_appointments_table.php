@@ -12,23 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('appointments', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
             $table->uuid()->unique();
-            $table->foreignId('staff_id')->constrained();
-            $table->foreignId('patient_id')->constrained();
-            $table->foreignId('facility_id')->constrained();
-            $table->dateTime('date');
-            $table->enum('status', [
-                'scheduled',
-                'confirmed',
-                'checked_in',
-                'in_progress',
-                'completed',
-                'cancelled',
-                'no_show',
-                'rescheduled',
-            ]);
-        $table->timestamps();
+            $table->foreignId('facility_staff_id')->constrained('facility_staff')->cascadeOnDelete();
+            $table->foreignId('patient_id')->constrained('patients')->cascadeOnDelete();
+            $table->dateTime('start_at')->nullable();
+            $table->dateTime('end_at')->nullable();
+            $table->string('status');
+            $table->text('notes')->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->text('reason')->nullable();
+            $table->timestamps();
+
+            $table->index(['facility_staff_id', 'start_at']);
+            $table->index(['patient_id', 'start_at']);
+            $table->index(['status']);
         });
     }
 

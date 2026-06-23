@@ -1,24 +1,29 @@
 <?php
 
-declare(strict_types=1);
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('prescriptions', function (Blueprint $table) {
-            $table->text('notes')->nullable()->after('doctor_id');
+            $table->dropForeign(['doctor_id']);
+            $table->dropColumn(['doctor_id']);
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('prescriptions', function (Blueprint $table) {
-            $table->dropColumn('notes');
+            $table->foreignId('doctor_id')->after('id')->constrained();
         });
     }
 };
