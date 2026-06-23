@@ -2,18 +2,22 @@
 
 namespace App\Services;
 
+use App\Models\City;
 use App\Models\Facility;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class FacilityService
 {
-    public function __construct(private readonly UuidResolver $uuid_resolver)
-    {
-    }
-    public function paginate(int $perPage = 15, ?string $search = null, ?string $type = null): LengthAwarePaginator {
+    public function __construct(private readonly UuidResolver $uuid_resolver) {}
 
-        return Facility::query()->with(['organization','parent',])
+    public function paginate(int $perPage = 15, ?string $search = null, ?string $type = null): LengthAwarePaginator
+    {
+
+        return Facility::query()->with(['organization', 'parent'])
             ->when(
                 $search,
                 fn ($query) => $query->where(
@@ -35,50 +39,79 @@ class FacilityService
 
     public function create(array $data): Facility
     {
-        if (! empty($data['cover_image'])) {
-        $data['cover_image'] = $data['cover_image']->store(
-            "facilities/covers",
-            'public'
-        );
-        }
-        $data['organization_id'] = $this->uuid_resolver->resolve(
+        return DB::transaction(function () use ($data) {
+
+            if (! empty($data['cover_image'])) {
+                $data['cover_image'] = $data['cover_image']->store(
+                    'facilities/covers',
+                    'public'
+                );
+            }
+
+            if (! empty($data['organization_id'])) {
+                $data['organization_id'] = $this->uuid_resolver->resolve(
                     Organization::class,
                     $data['organization_id']
                 );
-        if( isset($data['parent_id'])){
-            $data['parent_id'] = $this->uuid_resolver->resolve(
-                        Facility::class,
-                        $data['parent_id']
-                    );
             }
-        $facility =  Facility::create($data);
-        foreach ($data['gallery_images'] as $image) {
-            $path = $image->store("facilities/images", 'public');
+            if (! empty($data['city_id'])) {
+                $data['city_id'] = $this->uuid_resolver->resolve(
+                    City::class,
+                    $data['city_id']
+                );
+            }
 
-            $facility->facilityImages()->create([
-                'image_url' => $path,
-            ]);
-        }
-        foreach ($data['files'] as $file) {
-            $path = $file->store("facilities/files", 'public');
+            if (! empty($data['owner_id'])) {
+                $data['owner_id'] = $this->uuid_resolver->resolve(
+                    User::class,
+                    $data['owner_id']
+                );
+            }
 
-            $facility->facilityDocuments()->create([
-            'file_url' => $path,
-            'document_type' => $file->getClientOriginalExtension(),
-            ]);
-        }
-        return $facility;
+            if (! empty($data['parent_id'])) {
+                $data['parent_id'] = $this->uuid_resolver->resolve(
+                    Facility::class,
+                    $data['parent_id']
+                );
+            }
+
+            $galleryImages = $data['gallery_images'] ?? [];
+            $files = $data['files'] ?? [];
+
+            unset($data['gallery_images'], $data['files']);
+
+            $facility = Facility::create($data);
+
+            foreach ($galleryImages as $image) {
+                $path = $image->store('facilities/images', 'public');
+
+                $facility->facilityImages()->create([
+                    'image_url' => $path,
+                ]);
+            }
+
+            foreach ($files as $file) {
+                $path = $file->store('facilities/files', 'public');
+
+                $facility->facilityDocuments()->create([
+                    'file_url' => $path,
+                    'document_type' => $file->getClientOriginalExtension(),
+                ]);
+            }
+
+            return $facility;
+        });
     }
 
     public function show(Facility $facility): Facility
     {
         return $facility->load([
-                'organization',
-                'parent',
-                'children',
-                'facilityImages',
-                'facilityDocuments',
-            ]);
+            'organization',
+            'parent',
+            'children',
+            'facilityImages',
+            'facilityDocuments',
+        ]);
     }
 
     public function update(
@@ -86,9 +119,94 @@ class FacilityService
         array $data
     ): Facility {
 
-        $facility->update($data);
+        return DB::transaction(function () use ($facility, $data) {
 
-        return $facility->refresh();
+            if (! empty($data['cover_image'])) {
+                if ($facility->cover_image) {
+                    Storage::disk('public')->delete($facility->cover_image);
+                }
+                $data['cover_image'] = $data['cover_image']->store(
+                    'facilities/covers',
+                    'public'
+                );
+            }
+
+            if (! empty($data['organization_id'])) {
+                $data['organization_id'] = $this->uuid_resolver->resolve(
+                    Organization::class,
+                    $data['organization_id']
+                );
+            }
+            if (! empty($data['city_id'])) {
+                $data['city_id'] = $this->uuid_resolver->resolve(
+                    City::class,
+                    $data['city_id']
+                );
+            }
+
+            if (! empty($data['owner_id'])) {
+                $data['owner_id'] = $this->uuid_resolver->resolve(
+                    User::class,
+                    $data['owner_id']
+                );
+            }
+
+            if (! empty($data['parent_id'])) {
+                $data['parent_id'] = $this->uuid_resolver->resolve(
+                    Facility::class,
+                    $data['parent_id']
+                );
+            }
+
+            $galleryImages = $data['gallery_images'] ?? [];
+            $files = $data['files'] ?? [];
+            $deletedGalleryImages = $data['deleted_gallery_images'] ?? [];
+            $deletedFiles = $data['deleted_files'] ?? [];
+
+            unset(
+                $data['gallery_images'],
+                $data['files'],
+                $data['deleted_gallery_images'],
+                $data['deleted_files']
+            );
+
+            $facility->update($data);
+
+            $facility->facilityImages()
+                ->whereIn('uuid', $deletedGalleryImages)
+                ->get()
+                ->each(function ($image) {
+                    Storage::disk('public')->delete($image->image_url);
+                    $image->delete();
+                });
+
+            $facility->facilityDocuments()
+                ->whereIn('uuid', $deletedFiles)
+                ->get()
+                ->each(function ($document) {
+                    Storage::disk('public')->delete($document->file_url);
+                    $document->delete();
+                });
+
+            foreach ($galleryImages as $image) {
+                $path = $image->store('facilities/images', 'public');
+
+                $facility->facilityImages()->create([
+                    'image_url' => $path,
+                ]);
+            }
+
+            foreach ($files as $file) {
+                $path = $file->store('facilities/files', 'public');
+
+                $facility->facilityDocuments()->create([
+                    'file_url' => $path,
+                    'document_type' => $file->getClientOriginalExtension(),
+                ]);
+            }
+
+            return $facility->refresh();
+        });
     }
 
     public function destroy(Facility $facility): void

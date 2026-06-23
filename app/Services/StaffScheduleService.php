@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Facility;
-use App\Models\Staff;
+use App\Models\FacilityStaff;
 use App\Models\StaffSchedule;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -15,35 +14,31 @@ class StaffScheduleService
     {
     }
 
-    public function paginate(int $perPage = 15, ?int $staffId = null): LengthAwarePaginator
+    public function paginate(int $perPage = 15, ?int $facilityStaffId = null): LengthAwarePaginator
     {
         return StaffSchedule::query()
-            ->with('staff.user', 'facility')
-            ->when($staffId, fn ($query) => $query->where('staff_id', $staffId))
+            ->with('facilityStaff.staff.user', 'facilityStaff.facility')
+            ->when($facilityStaffId, fn ($query) => $query->where('facility_staff_id', $facilityStaffId))
             ->latest()
             ->paginate($perPage);
     }
 
     public function create(array $data): StaffSchedule
     {
-        $data['staff_id'] = $this->uuid_resolver->resolve(Staff::class, $data['staff_uuid']);
-        $data['facility_id'] = $this->uuid_resolver->resolve(Facility::class, $data['facility_uuid']);
+        $data['facility_staff_id'] = $this->uuid_resolver->resolve(FacilityStaff::class, $data['facility_staff_uuid']);
 
         return StaffSchedule::create($data);
     }
 
     public function show(StaffSchedule $staffSchedule): StaffSchedule
     {
-        return $staffSchedule->load('staff.user', 'facility');
+        return $staffSchedule->load('facilityStaff.staff.user', 'facilityStaff.facility');
     }
 
     public function update(StaffSchedule $staffSchedule, array $data): StaffSchedule
     {
-        if (isset($data['staff_uuid'])) {
-            $data['staff_id'] = $this->uuid_resolver->resolve(Staff::class, $data['staff_uuid']);
-        }
-        if (isset($data['facility_uuid'])) {
-            $data['facility_id'] = $this->uuid_resolver->resolve(Facility::class, $data['facility_uuid']);
+        if (isset($data['facility_staff_uuid'])) {
+            $data['facility_staff_id'] = $this->uuid_resolver->resolve(FacilityStaff::class, $data['facility_staff_uuid']);
         }
 
         $staffSchedule->update($data);

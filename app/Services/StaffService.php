@@ -4,145 +4,186 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Department;
+use App\Models\Facility;
 use App\Models\FacilityStaff;
+use App\Models\Position;
+use App\Models\Role;
 use App\Models\Staff;
 use App\Models\StaffPosition;
-use App\Models\Role;
 use App\Models\User;
-use App\Models\Facility;
-use App\Models\Position;
-use App\Models\Department;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class StaffService
 {
-     public function __construct(private readonly UuidResolver $uuid_resolver)
-    {
-    }
+    public function __construct(private readonly UuidResolver $uuid_resolver) {}
 
     public function paginate(int $perPage = 15, ?string $search = null, ?string $facilityUuid = null): LengthAwarePaginator
     {
         $facility = Facility::where('uuid', $facilityUuid)->first();
 
-return Staff::query()
-    ->with(['user', 'facilityStaff.facility', 'facilities', 'position'])
+        return Staff::query()
+            ->with(['user', 'facilityStaff.facility', 'facilities', 'position'])
 
-    ->when($search, function ($query) use ($search) {
-        $query->whereHas('user', function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%");
-        });
-    })
+            ->when($search, function ($query) use ($search) {
+                $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
+            })
 
-    ->when($facility, function ($query) use ($facility) {
-        $query->whereHas('facilityStaff', function ($q) use ($facility) {
-            $q->where('facility_id', $facility->id);
-        });
-    })
+            ->when($facility, function ($query) use ($facility) {
+                $query->whereHas('facilityStaff', function ($q) use ($facility) {
+                    $q->where('facility_id', $facility->id);
+                });
+            })
 
-    ->latest('id')
-    ->paginate($perPage);
+            ->latest('id')
+            ->paginate($perPage);
     }
 
     public function checkEmail(string $email): array
     {
-        $user = User::where('email', $email)->first();
+        $user = User::query()
+            ->select(['id', 'uuid', 'name', 'email', 'avatar', 'cover_image'])
+            ->where('email', $email)
+            ->first();
 
         if (! $user) {
-            return ['exists' => false];
+            return [
+                'exists' => false,
+                'can_create_staff' => true,
+            ];
         }
 
-        return [
+        $staff = Staff::where('user_id', $user->id)->first();
+
+        $response = [
             'exists' => true,
+            'has_staff_profile' => $staff !== null,
+            'can_create_staff' => true,
             'user' => [
                 'uuid' => $user->uuid,
-                'name' => $user->name,
+                'name' => $user->getTranslations('name'),
                 'email' => $user->email,
+                'avatar' => $user->avatar,
+                'cover_image' => $user->cover_image,
             ],
         ];
+
+        if ($staff) {
+            $response['staff'] = ['uuid' => $staff->uuid];
+        }
+
+        return $response;
     }
 
     public function create(array $data): Staff
-{
-    return DB::transaction(function () use ($data) {
+    {
+        return DB::transaction(function () use ($data) {
 
-        // Handle uploads safely
-        if (!empty($data['cover_image'])) {
-            $data['cover_image'] = $data['cover_image']->store('users/cover', 'public');
-        }
+            if (! empty($data['cover_image'])) {
+                $data['cover_image'] = $data['cover_image']
+                    ->store('users/cover', 'public');
+            }
 
-        if (!empty($data['avatar'])) {
-            $data['avatar'] = $data['avatar']->store('users/avatar', 'public');
-        }
+            if (! empty($data['avatar'])) {
+                $data['avatar'] = $data['avatar']
+                    ->store('users/avatar', 'public');
+            }
 
-        // Find or create user
-        $user = User::where('email', $data['email'])->first();
+            $user = User::firstOrCreate(
+                [
+                    'email' => $data['email'],
+                ],
+                [
+                    'name' => $data['name'],
+                    'password' => Hash::make('password'), // Str::random(32)
+                    'cover_image' => $data['cover_image'] ?? null,
+                    'avatar' => $data['avatar'] ?? null,
+                ]
+            );
+            $staff = Staff::firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                ],
+                [
+                    'specialization' => $data['specialization'] ?? null,
+                    'experience_years' => $data['experience_years'] ?? null,
+                    'bio' => $data['bio'] ?? null,
+                    'consultation_fee' => $data['consultation_fee'] ?? null,
+                    'status' => $data['status'] ?? 'active',
+                ]
+            );
 
-        if (!$user) {
-            $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Hash::make(Str::random(32)),
-                'cover_image' => $data['cover_image'] ?? null,
-                'avatar' => $data['avatar'] ?? null,
-            ]);
-        }
+            foreach ($data['facilities'] ?? [] as $facilityData) {
 
-        // Prevent duplicate staff
-        if (Staff::where('user_id', $user->id)->exists()) {
-            throw ValidationException::withMessages([
-                'email' => __('A staff profile already exists for this user.'),
-            ]);
-        }
-
-        // Create staff
-        $staff = Staff::create([
-            'user_id' => $user->id,
-            'specialization' => $data['specialization'] ?? null,
-            'experience_years' => $data['experience_years'] ?? null,
-            'bio' => $data['bio'] ?? null,
-            'consultation_fee' => $data['consultation_fee'] ?? null,
-            'status' => $data['status'] ?? 'active',
-        ]);
-
-        // Facilities pivot
-        collect($data['facilities'] ?? [])->each(function ($facilityData) use ($staff) {
-
-            FacilityStaff::create([
-                'staff_id' => $staff->id,
-
-                'facility_id' => $this->uuid_resolver->resolve(
+                $facilityId = $this->uuid_resolver->resolve(
                     Facility::class,
                     $facilityData['facility_uuid']
-                ),
+                );
 
-                'position_id' => !empty($facilityData['position_uuid'])
-                    ? $this->uuid_resolver->resolve(
-                        Position::class,
-                        $facilityData['position_uuid']
-                    )
-                    : null,
+                $role = Role::query()
+                    ->where('uuid', $facilityData['role_uuid'])
+                    ->where('scope', 'facility')
+                    ->where('is_active', true)
+                    ->first();
 
-                'department_id' => !empty($facilityData['department_uuid'])
+                if (! $role) {
+                    throw ValidationException::withMessages([
+                        'role' => __('Invalid facility role selected.'),
+                    ]);
+                }
+
+                $departmentId = ! empty($facilityData['department_uuid'])
                     ? $this->uuid_resolver->resolve(
                         Department::class,
                         $facilityData['department_uuid']
                     )
-                    : null,
+                    : null;
+
+                $positionId = ! empty($facilityData['position_uuid'])
+                    ? $this->uuid_resolver->resolve(
+                        Position::class,
+                        $facilityData['position_uuid']
+                    )
+                    : null;
+
+                $exists = FacilityStaff::query()
+                    ->where('staff_id', $staff->id)
+                    ->where('facility_id', $facilityId)
+                    ->whereNull('ended_at')
+                    ->exists();
+
+                if ($exists) {
+                    throw ValidationException::withMessages([
+                        'facility' => __('This staff member is already assigned to this facility.'),
+                    ]);
+                }
+
+                FacilityStaff::create([
+                    'staff_id' => $staff->id,
+                    'facility_id' => $facilityId,
+                    'department_id' => $departmentId,
+                    'position_id' => $positionId,
+                    'role_id' => $role->id,
+                    'joined_at' => now(),
+                    'ended_at' => null,
+                ]);
+            }
+
+            return $staff->load([
+                'user',
+                'facilityStaff.role',
+                'facilityStaff.facility',
+                'facilityStaff.department',
+                'facilityStaff.position',
             ]);
         });
+    }
 
-        return $staff->load([
-            'user',
-            'facilityStaff.facility',
-            'facilityStaff.position',
-            'facilityStaff.department'
-        ]);
-    });
-}
     public function show(Staff $staff): Staff
     {
         return $staff->load([
@@ -158,16 +199,122 @@ return Staff::query()
 
     public function update(Staff $staff, array $data): Staff
     {
-        if (isset($data['staff_position_uuid'])) {
-            $data['staff_position_id'] = $this->uuid_resolver->resolve(
-                StaffPosition::class,
-                $data['staff_position_uuid']
-            );
-        }
+        return DB::transaction(function () use ($staff, $data) {
 
-        $staff->update($data);
+            // 1. رفع الملفات الجديدة (وحذف القديمة من التخزين عند الاستبدال)
+            if (! empty($data['cover_image'])) {
+                if ($staff->user->cover_image) {
+                    Storage::disk('public')->delete($staff->user->cover_image);
+                }
+                $data['cover_image'] = $data['cover_image']->store('users/cover', 'public');
+            }
 
-        return $staff->load(['user', 'facilityStaff.facility', 'position']);
+            if (! empty($data['avatar'])) {
+                if ($staff->user->avatar) {
+                    Storage::disk('public')->delete($staff->user->avatar);
+                }
+                $data['avatar'] = $data['avatar']->store('users/avatar', 'public');
+            }
+
+            // 2. تحديث بيانات المستخدم المرتبط (فقط الحقول المرسلة فعلاً)
+            $userPayload = array_intersect_key($data, array_flip(['name', 'avatar', 'cover_image']));
+
+            if (! empty($userPayload)) {
+                $staff->user->update($userPayload);
+            }
+
+            // 3. تحويل staff_position_uuid إلى id
+            if (isset($data['staff_position_uuid'])) {
+                $data['staff_position_id'] = $this->uuid_resolver->resolve(
+                    StaffPosition::class,
+                    $data['staff_position_uuid']
+                );
+            }
+
+            // 4. تحديث بيانات Staff (فقط الحقول المرسلة فعلاً)
+            $staffPayload = array_intersect_key($data, array_flip([
+                'specialization', 'experience_years', 'bio', 'consultation_fee', 'staff_position_id',
+            ]));
+
+            if (! empty($staffPayload)) {
+                $staff->update($staffPayload);
+            }
+
+            // 5. مزامنة الـ facilities إذا تم إرسالها
+            if (array_key_exists('facilities', $data)) {
+
+                $incomingFacilityIds = [];
+
+                foreach ($data['facilities'] as $facilityData) {
+
+                    $facilityId = $this->uuid_resolver->resolve(
+                        Facility::class,
+                        $facilityData['facility_uuid']
+                    );
+
+                    $role = Role::query()
+                        ->where('uuid', $facilityData['role_uuid'])
+                        ->where('scope', 'facility')
+                        ->where('is_active', true)
+                        ->first();
+
+                    if (! $role) {
+                        throw ValidationException::withMessages([
+                            'role' => __('Invalid facility role selected.'),
+                        ]);
+                    }
+
+                    $departmentId = ! empty($facilityData['department_uuid'])
+                        ? $this->uuid_resolver->resolve(Department::class, $facilityData['department_uuid'])
+                        : null;
+
+                    $positionId = ! empty($facilityData['position_uuid'])
+                        ? $this->uuid_resolver->resolve(Position::class, $facilityData['position_uuid'])
+                        : null;
+
+                    $existing = FacilityStaff::query()
+                        ->where('staff_id', $staff->id)
+                        ->where('facility_id', $facilityId)
+                        ->whereNull('ended_at')
+                        ->first();
+
+                    if ($existing) {
+                        $existing->update([
+                            'department_id' => $departmentId,
+                            'position_id' => $positionId,
+                            'role_id' => $role->id,
+                        ]);
+                    } else {
+                        FacilityStaff::create([
+                            'staff_id' => $staff->id,
+                            'facility_id' => $facilityId,
+                            'department_id' => $departmentId,
+                            'position_id' => $positionId,
+                            'role_id' => $role->id,
+                            'joined_at' => now(),
+                            'ended_at' => null,
+                        ]);
+                    }
+
+                    $incomingFacilityIds[] = $facilityId;
+                }
+
+                // إنهاء التعيينات النشطة لأي facility لم تُرسل ضمن الطلب
+                FacilityStaff::query()
+                    ->where('staff_id', $staff->id)
+                    ->whereNotIn('facility_id', $incomingFacilityIds)
+                    ->whereNull('ended_at')
+                    ->update(['ended_at' => now()]);
+            }
+
+            return $staff->load([
+                'user',
+                'facilityStaff.role',
+                'facilityStaff.facility',
+                'facilityStaff.department',
+                'facilityStaff.position',
+            ]);
+        });
     }
 
     public function destroy(Staff $staff): void

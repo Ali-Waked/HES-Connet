@@ -15,15 +15,16 @@ class RoleService
     {
     }
 
-    public function paginate(int $perPage = 15,?string $search): LengthAwarePaginator
+    public function paginate(int $perPage = 15, ?string $search): LengthAwarePaginator
     {
         return Role::query()
             ->with('permissions')
-             ->when(
+            ->when(
                 $search,
                 fn ($query) => $query->where(function ($q) use ($search) {
                     $q->where('name->en', 'like', "%{$search}%")
-                      ->orWhere('name->ar', 'like', "%{$search}%");
+                      ->orWhere('name->ar', 'like', "%{$search}%")
+                      ->orWhere('slug', 'like', "%{$search}%");
                 })
             )
             ->latest()

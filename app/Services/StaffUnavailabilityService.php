@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Staff;
+use App\Models\FacilityStaff;
 use App\Models\StaffUnavailability;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -14,31 +14,31 @@ class StaffUnavailabilityService
     {
     }
 
-    public function paginate(int $perPage = 15, ?int $staffId = null): LengthAwarePaginator
+    public function paginate(int $perPage = 15, ?int $facilityStaffId = null): LengthAwarePaginator
     {
         return StaffUnavailability::query()
-            ->with('staff.user')
-            ->when($staffId, fn ($query) => $query->where('staff_id', $staffId))
+            ->with('facilityStaff.staff.user')
+            ->when($facilityStaffId, fn ($query) => $query->where('facility_staff_id', $facilityStaffId))
             ->latest()
             ->paginate($perPage);
     }
 
     public function create(array $data): StaffUnavailability
     {
-        $data['staff_id'] = $this->uuid_resolver->resolve(Staff::class, $data['staff_uuid']);
+        // $data['facility_staff_id'] = $this->uuid_resolver->resolve(FacilityStaff::class, $data['facility_staff_uuid']);
 
         return StaffUnavailability::create($data);
     }
 
     public function show(StaffUnavailability $staffUnavailability): StaffUnavailability
     {
-        return $staffUnavailability->load('staff.user');
+        return $staffUnavailability->load('facilityStaff.staff.user');
     }
 
     public function update(StaffUnavailability $staffUnavailability, array $data): StaffUnavailability
     {
-        if (isset($data['staff_uuid'])) {
-            $data['staff_id'] = $this->uuid_resolver->resolve(Staff::class, $data['staff_uuid']);
+        if (isset($data['facility_staff_uuid'])) {
+            $data['facility_staff_id'] = $this->uuid_resolver->resolve(FacilityStaff::class, $data['facility_staff_uuid']);
         }
 
         $staffUnavailability->update($data);
