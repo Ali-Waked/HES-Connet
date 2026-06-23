@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AppointmentStatus;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Appointment extends Model
 {
@@ -16,12 +19,12 @@ class Appointment extends Model
 
     protected $fillable = [
         'uuid',
-        'staff_id',
+        'facility_staff_id',
         'patient_id',
-        'facility_id',
         'start_at',
         'end_at',
         'status',
+        'reason',
         'notes',
         'cancellation_reason',
     ];
@@ -45,9 +48,9 @@ class Appointment extends Model
         return 'uuid';
     }
 
-    public function staff(): BelongsTo
+    public function facilityStaff(): BelongsTo
     {
-        return $this->belongsTo(Staff::class);
+        return $this->belongsTo(FacilityStaff::class);
     }
 
     public function patient(): BelongsTo
@@ -55,9 +58,9 @@ class Appointment extends Model
         return $this->belongsTo(Patient::class);
     }
 
-    public function facility(): BelongsTo
+    public function review(): HasOne
     {
-        return $this->belongsTo(Facility::class);
+        return $this->hasOne(Review::class);
     }
 
     public function reschedules(): HasMany
@@ -70,8 +73,13 @@ class Appointment extends Model
         return $this->hasMany(AppointmentFile::class);
     }
 
-    public function prescription(): HasMany
+    public function prescription(): HasOne
     {
-        return $this->hasMany(Prescription::class);
+        return $this->hasOne(Prescription::class);
+    }
+
+    public function label(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->patient?->user?->name.' - '.$this->facilityStaff?->staff?->user?->name.' ('.Carbon::parse($this->start_at)->format('H:i').')');
     }
 }

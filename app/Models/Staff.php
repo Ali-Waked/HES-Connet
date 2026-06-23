@@ -6,11 +6,13 @@ namespace App\Models;
 
 use App\Enums\AccountStatus;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Spatie\Translatable\HasTranslations;
 
 /**
@@ -20,20 +22,20 @@ use Spatie\Translatable\HasTranslations;
  * @property int|null $experience_years
  * @property array|null $bio
  * @property float|null $consultation_fee
- * @property-read \App\Models\User $user
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\FacilityStaff> $facilityStaff
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Department> $departmentsAsHead
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\StaffSchedule> $schedules
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\StaffUnavailability> $unavailabilities
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Appointment> $appointmentsAsDoctor
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Prescription> $prescriptions
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Article> $articles
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Review> $reviews
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Symptom> $symptoms
+ * @property-read User $user
+ * @property-read Collection<int, FacilityStaff> $facilityStaff
+ * @property-read Collection<int, Department> $departmentsAsHead
+ * @property-read Collection<int, StaffSchedule> $schedules
+ * @property-read Collection<int, StaffUnavailability> $unavailabilities
+ * @property-read Collection<int, Appointment> $appointmentsAsDoctor
+ * @property-read Collection<int, Prescription> $prescriptions
+ * @property-read Collection<int, Article> $articles
+ * @property-read Collection<int, Review> $reviews
+ * @property-read Collection<int, Symptom> $symptoms
  */
 class Staff extends Model
 {
-    use HasUuids, HasTranslations;
+    use HasTranslations, HasUuids;
 
     public $timestamps = false;
 
@@ -58,7 +60,7 @@ class Staff extends Model
         ];
     }
 
-     public function uniqueIds(): array
+    public function uniqueIds(): array
     {
         return ['uuid'];
     }
@@ -96,17 +98,21 @@ class Staff extends Model
     // }
 
     public function facilities()
-{
-    return $this->belongsToMany(
-        Facility::class,
-        'facility_staff'
-    )
-    ->using(FacilityStaff::class)
-    ->withPivot([
-        'position_id',
-        'department_id',
-    ]);
-}
+    {
+        return $this->belongsToMany(
+            Facility::class,
+            'facility_staff'
+        )
+            ->using(FacilityStaff::class)
+            ->withPivot([
+                'position_id',
+                'department_id',
+                'role_id',
+                'joined_at',
+                'ended_at',
+                'uuid',
+            ]);
+    }
 
     public function departments(): BelongsToMany
     {
@@ -119,24 +125,35 @@ class Staff extends Model
         return $this->hasMany(Facility::class, 'head_staff_id');
     }
 
-    public function schedules(): HasMany
+    public function schedules(): HasManyThrough
     {
-        return $this->hasMany(StaffSchedule::class);
+        return $this->hasManyThrough(
+            StaffSchedule::class, // Final Model
+            FacilityStaff::class, // Intermediate Model
+
+            'staff_id',           // FK on facility_staff
+            'facility_staff_id',  // FK on staff_schedules
+
+            'id',                 // PK on staff
+            'id'                  // PK on facility_staff
+        );
     }
 
-    public function unavailabilities(): HasMany
+    public function unavailabilities(): HasManyThrough
     {
-        return $this->hasMany(StaffUnavailability::class);
+        return $this->hasManyThrough(StaffUnavailability::class, FacilityStaff::class);
     }
 
-    public function appointmentsAsDoctor(): HasMany
+    public function appointmentsAsDoctor(): HasManyThrough
     {
-        return $this->hasMany(Appointment::class, 'staff_id');
-    }
-
-    public function prescriptions(): HasMany
-    {
-        return $this->hasMany(Prescription::class, 'doctor_id');
+        return $this->hasManyThrough(
+            Appointment::class,
+            FacilityStaff::class,
+            'staff_id',
+            'facility_staff_id',
+            'id',
+            'id'
+        );
     }
 
     public function articles(): HasMany
@@ -174,8 +191,32 @@ class Staff extends Model
 
     public function scopeDoctors(Builder $query): Builder
     {
-        return $query->whereHas('user.role', fn (Builder $q) => $q
-            ->where('name->en', 'doctor')
+        return $query->whereHas('facilityStaff', fn (Builder $q) => $q
+            ->whereNull('ended_at')
+            ->whereHas('role', fn (Builder $rq) => $rq->where('slug', 'doctor'))
         );
+    }
+
+    public function getAvailableWorkspaces(): array
+    {
+        return $this->staff
+            ->facilityStaff
+            ->map(function ($membership) {
+                return [
+                    'id' => $membership->id, // facility_staff.id
+                    'facility' => [
+                        'id' => $membership->facility->id,
+                        'uuid' => $membership->facility->uuid,
+                        'name' => $membership->facility->name,
+                    ],
+                    'role' => [
+                        'id' => $membership->role->id,
+                        'slug' => $membership->role->slug,
+                        'name' => $membership->role->name,
+                    ],
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 }

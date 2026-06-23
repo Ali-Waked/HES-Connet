@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\FacilityDocumentStatus;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
+
 
 /**
  * @property-read int $id
@@ -20,12 +23,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class FacilityDocument extends Model
 {
+    use HasUuids;
+
     protected $fillable = [
         'facility_id',
         'document_type',
         'status',
         'file_url',
     ];
+
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     protected function casts(): array
     {
@@ -37,5 +52,9 @@ class FacilityDocument extends Model
     public function facility(): BelongsTo
     {
         return $this->belongsTo(Facility::class);
+    }
+      public function getFileUrlttribute(?string $value): ?string
+    {
+        return $value ? Storage::disk('public')->url($value) : null;
     }
 }

@@ -12,7 +12,7 @@ class StaffUnavailability extends Model
     protected $table = 'staff_unavailabilities';
 
     protected $fillable = [
-        'staff_id',
+        'facility_staff_id',
         'start_at',
         'end_at',
         'reason',
@@ -26,8 +26,8 @@ class StaffUnavailability extends Model
         ];
     }
 
-    public function staff(): BelongsTo
+    public function facilityStaff(): BelongsTo
     {
-        return $this->belongsTo(Staff::class);
+        return $this->belongsTo(FacilityStaff::class);
     }
 }

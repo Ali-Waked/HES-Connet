@@ -10,12 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StaffSchedule extends Model
 {
     protected $fillable = [
-        'staff_id',
-        'facility_id',
+        'facility_staff_id',
         'day_of_week',
         'start_time',
         'end_time',
         'slot_duration',
+        'is_active',
     ];
 
     protected function casts(): array
@@ -25,16 +25,12 @@ class StaffSchedule extends Model
             'slot_duration' => 'integer',
             'start_time' => 'string',
             'end_time' => 'string',
+            'is_active' => 'boolean',
         ];
     }
 
-    public function staff(): BelongsTo
+    public function facilityStaff(): BelongsTo
     {
-        return $this->belongsTo(Staff::class);
-    }
-
-    public function facility(): BelongsTo
-    {
-        return $this->belongsTo(Facility::class);
+        return $this->belongsTo(FacilityStaff::class);
     }
 }

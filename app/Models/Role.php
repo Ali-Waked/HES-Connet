@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Spatie\Translatable\HasTranslations;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property-read int $id
@@ -22,7 +22,11 @@ class Role extends Model
     public array $translatable = ['name'];
     protected $fillable = [
         'name',
-        'key',
+        'slug',
+        'scope',
+        'description',
+        'is_system',
+        'is_active',
     ];
 
      public function uniqueIds(): array
@@ -39,7 +43,24 @@ class Role extends Model
     {
         return [
             'name' => 'array',
+            'is_system' => 'boolean',
+            'is_active' => 'boolean',
         ];
+    }
+
+    public function scopeSystem(Builder $query): void
+    {
+        $query->where('scope', 'system');
+    }
+
+    public function scopeFacility(Builder $query): void
+    {
+        $query->where('scope', 'facility');
+    }
+
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('is_active', true);
     }
 
     public function getLabel(?string $locale = null): string
@@ -58,9 +79,9 @@ class Role extends Model
         return '';
     }
 
-    public function users(): HasMany
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class, 'user_role');
     }
 
     public function permissions(): BelongsToMany

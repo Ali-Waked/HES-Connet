@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -15,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class FacilityImage extends Model
 {
+    use HasUuids;
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -22,8 +26,22 @@ class FacilityImage extends Model
         'image_url',
     ];
 
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
     public function facility(): BelongsTo
     {
         return $this->belongsTo(Facility::class);
+    }
+      public function getImageUrlAttribute(?string $value): ?string
+    {
+        return $value ? Storage::disk('public')->url($value) : null;
     }
 }

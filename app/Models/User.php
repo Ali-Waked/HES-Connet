@@ -5,24 +5,22 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\Provider;
-use App\Models\OrganizationUser;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
-// use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
-use Spatie\Translatable\HasTranslations;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Translatable\HasTranslations;
 
 /**
  * @property-read string $uuid
@@ -36,22 +34,25 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
- * @property int $role_id
- * @property-read Role|null $role
  * @property-read UserProfiles|null $profile
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Role> $systemRoles
+ * @property-read Staff|null $staff
+ * @property-read Patient|null $patientProfile
+ * @property-read Facility|null $activeWorkspace
  */
-#[Fillable(['name', 'email', 'password', 'role_id', 'provider', 'provider_id', 'last_seen_at', 'city_id','avatar','cover_image'])]
+#[Fillable(['name', 'email', 'password', 'provider', 'provider_id', 'last_seen_at', 'city_id', 'avatar', 'cover_image'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable
 {
-    use HasTranslations;
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasUuids, Notifiable;
 
+    use HasTranslations;
+
     public array $translatable = ['name'];
+
     protected function casts(): array
     {
-
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
@@ -67,9 +68,9 @@ class User extends Authenticatable
         return ['uuid'];
     }
 
-    public function role(): BelongsTo
+    public function systemRoles(): BelongsToMany
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsToMany(Role::class, 'user_role');
     }
 
     public function city(): BelongsTo
@@ -80,6 +81,26 @@ class User extends Authenticatable
     public function profile(): HasOne
     {
         return $this->hasOne(UserProfiles::class);
+    }
+
+    public function staff(): HasOne
+    {
+        return $this->hasOne(Staff::class);
+    }
+
+    public function patient(): HasOne
+    {
+        return $this->hasOne(Patient::class);
+    }
+
+    public function patientProfile(): HasOne
+    {
+        return $this->hasOne(Patient::class, 'user_id');
+    }
+
+    public function activeWorkspace(): BelongsTo
+    {
+        return $this->belongsTo(Facility::class, 'active_workspace_id');
     }
 
     public function comments(): HasMany
@@ -134,27 +155,147 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    public function hasRole(string|array $roles): bool
+    public function hasSystemRole(string|array $roles): bool
     {
-        $roleName = $this->role?->name['en'] ?? null;
+        return $this->systemRoles()
+            ->whereIn('slug', (array) $roles)
+            ->exists();
+    }
 
-        return in_array($roleName, (array) $roles);
+    public function hasSystemPermission(string $permission): bool
+    {
+        return $this->systemRoles()
+            ->whereHas('permissions', fn ($q) => $q->where('key', $permission))
+            ->exists();
     }
 
     public function hasPermission(string $permission): bool
     {
-        return $this->role?->permissions()->where('key', $permission)->exists() ?? false;
+        if ($this->hasSystemPermission($permission)) {
+            return true;
+        }
+
+        $activeFs = $this->getActiveFacilityStaff();
+        if ($activeFs && $activeFs->role) {
+            return $activeFs->role->permissions()
+                ->where('key', $permission)
+                ->exists();
+        }
+
+        return false;
     }
 
-    public function allPermissions(): Collection
+    public function getSystemPermissions(): Collection
     {
-        return $this->role?->permissions ?? collect();
+        return $this->systemRoles()
+            ->with('permissions')
+            ->get()
+            ->flatMap(fn (Role $role) => $role->permissions)
+            ->unique('id');
     }
-     public function getCoverImageAttribute(?string $value): ?string
+
+    public function getAllPermissions(): Collection
+    {
+        $systemPermissions = $this->getSystemPermissions();
+
+        $activeFs = $this->getActiveFacilityStaff();
+
+        $facilityPermissions = $activeFs && $activeFs->role
+            ? $activeFs->role->permissions
+            : collect();
+
+        return $systemPermissions->merge($facilityPermissions)->unique('id');
+    }
+
+    public function getActiveFacilityStaff(): ?FacilityStaff
+    {
+        if (! $this->active_workspace_id) {
+            return null;
+        }
+
+        $staff = $this->staff;
+
+        if (! $staff) {
+            return null;
+        }
+
+        return $staff->facilityStaff()
+            ->where('facility_id', $this->active_workspace_id)
+            ->whereNull('ended_at')
+            ->first();
+    }
+
+    public function getAvailableWorkspaces(): Collection
+    {
+        $staff = $this->staff;
+
+        if (! $staff) {
+            return collect();
+        }
+
+        return $staff->facilityStaff()
+            ->with([
+                'facility',
+                'role',
+                'role.permissions',
+            ])
+            ->whereNull('ended_at')
+            ->get()
+            ->map(function (FacilityStaff $fs) {
+                return [
+                    'workspace_id' => $fs->id,
+
+                    'facility' => [
+                        'id' => $fs->facility->id,
+                        'uuid' => $fs->facility->uuid,
+                        'name' => $fs->facility->name,
+                        'type' => $fs->facility->type,
+                    ],
+
+                    'role' => [
+                        'id' => $fs->role->id,
+                        'uuid' => $fs->role->uuid,
+                        'name' => $fs->role->name,
+                        'slug' => $fs->role->slug,
+                    ],
+
+                    'permissions' => $fs->role
+                        ->permissions
+                        ->pluck('key')
+                        ->values(),
+                ];
+            });
+    }
+
+    public function getDashboardRouteAttribute(): string
+    {
+        if ($this->hasSystemRole('super_admin')) {
+            return '/admin/dashboard';
+        }
+
+        $activeFs = $this->getActiveFacilityStaff();
+
+        if ($activeFs && $activeFs->role?->slug === 'doctor') {
+            return '/staff/dashboard';
+        }
+
+        if ($this->hasSystemRole('facility_owner')) {
+            return '/facility/dashboard';
+        }
+
+        if ($this->patientProfile()->exists()) {
+            return '/patient/dashboard';
+        }
+
+        return '/';
+    }
+
+    public function getCoverImageAttribute(?string $value): ?string
     {
         return $value ? Storage::disk('public')->url($value) : null;
     }
-     public function getAvatarAttribute(?string $value): ?string
+
+    public function getAvatarAttribute(?string $value): ?string
     {
         return $value ? Storage::disk('public')->url($value) : null;
     }

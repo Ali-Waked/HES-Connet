@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Translatable\HasTranslations;
 
@@ -40,11 +41,10 @@ use Spatie\Translatable\HasTranslations;
  * @property-read Collection<int, JobPost> $jobPosts
  * @property-read Collection<int, MedicationRequest> $medicationRequests
  */
-#[Fillable(['name', 'latitude', 'longitude', 'facility_type', 'organization_id', 'parent_id', 'created_by', 'status', 'approval_status', 'cover_image', 'city_id'])]
+#[Fillable(['name', 'latitude', 'longitude', 'facility_type', 'organization_id', 'owner_id', 'parent_id', 'created_by', 'status', 'approval_status', 'cover_image', 'city_id', 'is_featured'])]
 class Facility extends Model
 {
     use HasTranslations, HasUuids;
-
 
     public array $translatable = ['name', 'description'];
 
@@ -56,6 +56,7 @@ class Facility extends Model
             'approval_status' => FacilityApprovalStatus::class,
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
+            'is_featured' => 'boolean',
         ];
     }
 
@@ -72,6 +73,16 @@ class Facility extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function parent(): BelongsTo
@@ -106,7 +117,19 @@ class Facility extends Model
 
     public function facilityStaff(): HasMany
     {
-        return $this->hasMany(FacilityStaff::class);
+        return $this->hasMany(FacilityStaff::class, 'staff_id');
+    }
+
+    public function appointments(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Appointment::class,
+            FacilityStaff::class,
+            'facility_id',       // FK on facility_staff
+            'facility_staff_id', // FK on appointments
+            'id',                // PK on facilities
+            'id'                 // PK on facility_staff
+        );
     }
 
     public function departments(): HasMany
@@ -114,7 +137,7 @@ class Facility extends Model
         return $this->hasMany(Department::class);
     }
 
-       public function getCoverImageAttribute(?string $value): ?string
+    public function getCoverImageAttribute(?string $value): ?string
     {
         return $value ? Storage::disk('public')->url($value) : null;
     }
@@ -129,18 +152,23 @@ class Facility extends Model
     //     return $this->hasMany(PharmacyInventory::class);
     // }
 
-    // public function facilityReviews(): HasMany
-    // {
-    //     return $this->hasMany(FacilityReview::class);
-    // }
+    public function pharmacyMedicines(): HasMany
+    {
+        return $this->hasMany(PharmacyMedicine::class);
+    }
+
+    public function facilityReviews(): HasMany
+    {
+        return $this->hasMany(FacilityReview::class);
+    }
 
     // public function jobPosts(): HasMany
     // {
     //     return $this->hasMany(JobPost::class);
     // }
 
-    // public function medicationRequests(): HasMany
-    // {
-    //     return $this->hasMany(MedicationRequest::class);
-    // }
+    public function medicationRequests(): HasMany
+    {
+        return $this->hasMany(MedicationRequest::class);
+    }
 }
