@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Staff;
 
+use App\Enums\MedicationRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MedicationRequest\AcceptMedicationRequestRequest;
 use App\Http\Requests\MedicationRequest\RejectMedicationRequestRequest;
@@ -57,7 +58,7 @@ class MedicationRequestController extends Controller
         $this->ensureRequestBelongsToFacility($medicationRequest, $facility);
 
         abort_unless(
-            $medicationRequest->status === 'pending',
+            $medicationRequest->status === MedicationRequestStatus::PENDING,
             422,
             __('Only pending requests can be accepted.')
         );
@@ -95,7 +96,7 @@ class MedicationRequestController extends Controller
         $this->ensureRequestBelongsToFacility($medicationRequest, $facility);
 
         abort_unless(
-            $medicationRequest->status === 'pending',
+            $medicationRequest->status === MedicationRequestStatus::PENDING,
             422,
             __('Only pending requests can be rejected.')
         );

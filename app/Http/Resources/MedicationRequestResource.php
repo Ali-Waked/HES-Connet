@@ -21,6 +21,7 @@ class MedicationRequestResource extends JsonResource
             'patient' => $this->whenLoaded('patient.user', fn () => [
                 'uuid' => $this->patient->uuid,
                 'name' => $this->patient->user->name,
+                'avatar' => $this->patient->user->avatar,
             ]),
             'pharmacy' => $this->whenLoaded('facility', fn () => [
                 'uuid' => $this->facility->uuid,
