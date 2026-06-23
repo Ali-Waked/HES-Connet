@@ -16,7 +16,7 @@ class OrganizationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $isAdmin = $request->is('api/admin/*') || (($request->user()?->role?->name['en'] ?? null) === 'admin');
+        $isAdmin = $request->is('api/admin/*') || ($request->user() && $request->user()->hasSystemRole('super_admin'));
 
         return array_merge([
             'id' => $this->id,

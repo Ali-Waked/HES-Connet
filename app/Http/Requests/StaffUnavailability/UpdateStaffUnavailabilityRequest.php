@@ -16,7 +16,7 @@ class UpdateStaffUnavailabilityRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'staff_uuid' => ['sometimes', 'required', 'exists:staff,uuid'],
+            'facility_staff_uuid' => ['sometimes', 'required', 'exists:facility_staff,uuid'],
             'start_at' => ['sometimes', 'required', 'date', 'after_or_equal:now'],
             'end_at' => ['sometimes', 'required', 'date', 'after:start_at'],
             'reason' => ['nullable', 'string', 'max:255'],

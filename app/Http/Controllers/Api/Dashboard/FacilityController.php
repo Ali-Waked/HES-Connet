@@ -49,7 +49,27 @@ class FacilityController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Facility $facility): JsonResponse
+    public function show(Facility $facility): FacilityResource
+    {
+        $facility->load([
+            'organization',
+            'owner',
+            'createdBy',
+            'city',
+            'parent',
+            'children',
+            'facilityImages',
+            'facilityDocuments',
+            'departments',
+        ]);
+
+        return new FacilityResource($facility);
+    }
+
+    /**
+     * Display the specified resource for editing.
+     */
+    public function edit(Facility $facility): JsonResponse
     {
         $facility = $this->facility_service->show($facility);
         return response()->json([
@@ -57,12 +77,22 @@ class FacilityController extends Controller
                 'id' => $facility->id,
                 'uuid' => $facility->uuid,
                 'status' => $facility->status->value,
-                'organization_id' => $facility->organization_id,
+                'facility_type' => $facility->facility_type->value,
+                'organization_id' => $facility->organization?->uuid,
                 'approval_status' => $facility->approval_status->value,
                 'latitude' => $facility->latitude,
                 'longitude' => $facility->longitude,
                 'name' => $facility->getTranslations('name'),
-                // 'description' => $facility->getTranslations('description'),
+                'description' => $facility->getTranslations('description'),
+                'owner' => $facility->owner,
+                'cover_image'=> $facility->cover_image,
+                'images' => $facility->facilityImages,
+                'files' => $facility->facilityDocuments,
+                'is_featured'=> $facility->is_featured,
+                 'city' => $facility->city ? [
+    'uuid' => $facility->city->uuid,
+    'name' => $facility->city->getTranslations('name'),
+] : null,
             ],
         ]);
     }

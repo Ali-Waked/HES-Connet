@@ -16,12 +16,12 @@ class StoreStaffScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'staff_uuid' => ['required', 'exists:staff,uuid'],
-            'facility_uuid' => ['required', 'exists:facilities,uuid'],
+            'facility_staff_uuid' => ['required', 'exists:facility_staff,uuid'],
             'day_of_week' => ['required', 'integer', 'between:0,6'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'slot_duration' => ['required', 'integer', 'min:5'],
+            'is_active' => ['boolean'],
         ];
     }
 }

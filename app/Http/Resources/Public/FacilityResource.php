@@ -23,12 +23,13 @@ class FacilityResource extends JsonResource
                 'name' => $this->organization->getTranslations('name'),
                 'type' => $this->organization->type,
             ]),
-            'head_staff' => $this->whenLoaded('headStaff', fn () => [
-                'uuid' => $this->headStaff->uuid,
-                'name' => $this->headStaff->user?->getTranslations('name'),
-                'specialization' => $this->headStaff->getTranslations('specialization'),
-            ]),
-            'doctors_count' => $this->whenCounted('doctors_count'),
+            // 'head_staff' => $this->whenLoaded('headStaff', fn () => [
+            //     'uuid' => $this->headStaff->uuid,
+            //     'name' => $this->headStaff->user?->getTranslations('name'),
+            //     'specialization' => $this->headStaff->getTranslations('specialization'),
+            // ]),
+            'images' => $this->whenLoaded('facilityImages'),
+            // 'doctors_count' => $this->whenCounted('doctors_count'),
             'departments_count' => $this->whenCounted('departments_count'),
         ];
     }

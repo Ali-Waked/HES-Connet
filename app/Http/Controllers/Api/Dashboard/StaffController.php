@@ -10,6 +10,7 @@ use App\Http\Requests\Staff\StoreStaffRequest;
 use App\Http\Requests\Staff\UpdateStaffRequest;
 use App\Http\Resources\StaffResource;
 use App\Models\Staff;
+use App\Models\FacilityStaff;
 use App\Services\StaffService;
 use Illuminate\Http\JsonResponse;
 
@@ -61,6 +62,7 @@ class StaffController extends Controller
      */
     public function show(Staff $staff): StaffResource
     {
+        info($staff);
         return new StaffResource(
             $this->staff_service->show($staff)
         );
@@ -90,4 +92,15 @@ class StaffController extends Controller
             'message' => __('Staff deleted successfully.'),
         ]);
     }
+
+    public function terminate(FacilityStaff $staff)
+{
+    $staff->update([
+        'ended_at' => now(),
+    ]);
+
+    return response()->json([
+        'message' => 'Staff terminated successfully.',
+    ]);
+}
 }

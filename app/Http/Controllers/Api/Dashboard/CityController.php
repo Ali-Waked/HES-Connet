@@ -44,7 +44,10 @@ class CityController extends Controller
     public function show(City $city): JsonResponse
     {
         return response()->json([
-            'data' => new CityResource($city),
+              'data' => [
+                'name' => $city->getTranslations('name'),
+                'is_active'=> $city->is_active,
+            ]
         ]);
     }
 

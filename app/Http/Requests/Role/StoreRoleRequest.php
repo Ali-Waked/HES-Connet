@@ -19,6 +19,11 @@ class StoreRoleRequest extends FormRequest
             'name' => ['required', 'array'],
             'name.en' => ['required', 'string', 'max:255'],
             'name.ar' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255', 'unique:roles,slug'],
+            'scope' => ['required', 'string', 'in:system,facility'],
+            'description' => ['nullable', 'string'],
+            'is_system' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
             'permissions' => ['sometimes', 'array'],
             'permissions.*' => ['exists:permissions,uuid'],
         ];

@@ -7,10 +7,12 @@ namespace App\Http\Controllers\Api\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
+use App\Http\Resources\Api\Dashboard\FacilityRoleResource;
 use App\Http\Resources\RoleResource;
 use App\Models\Role;
 use App\Services\RoleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class RoleController extends Controller
 {
@@ -84,5 +86,12 @@ class RoleController extends Controller
             'success' => true,
             'data' => $this->role_service->getStats(),
         ]);
+    }
+
+    public function facilityRoles(): AnonymousResourceCollection
+    {
+        $roles = Role::facility()->active()->get(['id','uuid', 'name', 'slug']);
+
+        return FacilityRoleResource::collection($roles);
     }
 }

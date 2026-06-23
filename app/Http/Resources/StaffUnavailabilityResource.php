@@ -16,7 +16,10 @@ class StaffUnavailabilityResource extends JsonResource
             'start_at' => $this->start_at,
             'end_at' => $this->end_at,
             'reason' => $this->reason,
-            'staff' => new StaffListResource($this->whenLoaded('staff')),
+            'facility_staff' => $this->whenLoaded('facilityStaff', fn () => [
+                'uuid' => $this->facilityStaff->uuid,
+                'staff' => new StaffListResource($this->facilityStaff->whenLoaded('staff')),
+            ]),
         ];
     }
 }

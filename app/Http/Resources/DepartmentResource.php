@@ -16,13 +16,14 @@ class DepartmentResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $isAdmin = $request->is('api/admin/*') || (($request->user()?->role?->name['en'] ?? null) === 'admin');
+        $isAdmin = $request->is('api/admin/*') || ($request->user() && $request->user()->hasSystemRole('super_admin'));
 
         return array_merge([
             'id' => $this->id,
             'uuid' => $this->uuid,
             'facility' => new FacilityResource($this->whenLoaded('facility')),
             'head' => new StaffResource($this->whenLoaded('head')),
+            'staff_count' => $this->whenCounted('staff'),
             'created_at' => $this->created_at,
             'is_active'=> $this->is_active,
             'image' => $this->image,

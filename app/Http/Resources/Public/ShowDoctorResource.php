@@ -16,6 +16,8 @@ class ShowDoctorResource extends JsonResource
             'name' => $this->user?->getTranslations('name'),
             'specialization' => $this->getTranslations('specialization'),
             'bio' => $this->getTranslations('bio'),
+            'avatar' => $this->user->avatar,
+            'cover_image' => $this->user->cover_image,
             'facilities' => $this->whenLoaded('facilities', fn () => $this->facilities->map(fn ($facility) => [
                 'uuid' => $facility->uuid,
                 'name' => $facility->getTranslations('name'),

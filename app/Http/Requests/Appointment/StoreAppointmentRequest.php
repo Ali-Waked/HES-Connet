@@ -15,12 +15,14 @@ class StoreAppointmentRequest extends FormRequest
 
     public function rules(): array
     {
+        info($this->all());
+
         return [
-            'staff_uuid' => ['required', 'exists:staff,uuid'],
+            'facility_staff_uuid' => ['required', 'exists:facility_staff,uuid'],
             'patient_uuid' => ['required', 'exists:users,uuid'],
-            'facility_uuid' => ['required', 'exists:facilities,uuid'],
             'start_at' => ['required', 'date', 'after_or_equal:now'],
             'end_at' => ['required', 'date', 'after:start_at'],
+            'reason' => ['nullable', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

@@ -11,13 +11,38 @@ class PrescriptionResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $doctor = $this->appointment?->facilityStaff?->staff;
+        $facility = $this->appointment?->facilityStaff?->facility;
+
         return [
-            'id' => $this->id,
+            'uuid' => $this->uuid,
+            'status' => $this->status?->value,
             'notes' => $this->notes,
             'created_at' => $this->created_at,
-            'doctor' => $this->whenLoaded('doctor', fn () => [
-                'uuid' => $this->doctor->uuid,
-                'name' => $this->doctor->user->getTranslations('name'),
+            'updated_at' => $this->updated_at,
+            'appointment' => $this->whenLoaded('appointment', fn () => [
+                'uuid' => $this->appointment->uuid,
+                'start_at' => $this->appointment->start_at,
+                'end_at' => $this->appointment->end_at,
+                'status' => $this->appointment->status?->value,
+                'reason' => $this->appointment->reason,
+                'notes' => $this->appointment->notes,
+                'cancellation_reason' => $this->appointment->cancellation_reason,
+            ]),
+            'doctor' => $doctor ? [
+                'uuid' => $doctor->uuid,
+                'name' => $doctor->user->getTranslations('name'),
+                'avatar' => $doctor->user->avatar,
+            ] : null,
+            'facility' => $facility ? [
+                'uuid' => $facility->uuid,
+                'name' => $facility->getTranslations('name'),
+                'cover_image' => $facility->cover_image,
+            ] : null,
+            'patient' => $this->whenLoaded('appointment.patient.user', fn () => [
+                'uuid' => $this->appointment->patient->uuid,
+                'name' => $this->appointment->patient->user->name,
+                'avatar' => $this->appointment->patient->user->avatar,
             ]),
             'items' => PrescriptionItemResource::collection($this->whenLoaded('items')),
         ];

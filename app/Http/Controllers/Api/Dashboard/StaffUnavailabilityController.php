@@ -23,7 +23,7 @@ class StaffUnavailabilityController extends Controller
         return StaffUnavailabilityResource::collection(
             $this->staff_unavailability_service->paginate(
                 (int) request('per_page', 15),
-                request('staff_id')
+                request('facility_staff_id')
             )
         );
     }

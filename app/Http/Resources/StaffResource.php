@@ -30,23 +30,31 @@ class StaffResource extends JsonResource
         'facilities' => $this->whenLoaded(
             'facilities',
             fn () => $this->facilities->map(function ($facility) {
+                info($facility->pivot);
 
                 $position = $facility->pivot?->position;
                 $department = $facility->pivot?->department;
+                $role = $facility->pivot?->role;
 
                 return [
                     'uuid' => $facility->uuid,
-
+                    'facility_staff_uuid' => $facility->pivot?->uuid,
+                    'joined_at' => $facility->pivot->joined_at,
                     'name' => $facility->getTranslations('name'),
 
                     'position' => $position ? [
                         'uuid' => $position->uuid,
                         'name' => $position->getTranslations('name'),
                     ] : null,
-                    'department' => [
+                    'department' => $department ?[
                         'uuid' => $department->uuid,
                         'name' => $department->getTranslations('name'),
-                    ]
+                    ]:null,
+                    'role' => $role ? [
+                        'id' => $role->id,
+                        'name' => $role->getTranslations('name'),
+                        'slug' => $role->slug,
+                    ] : null,
                 ];
             })->values()
         ),

@@ -1,0 +1,86 @@
+<?php
+
+namespace App\Http\Controllers\Api\Facility;
+
+use App\Http\Controllers\Controller;
+use App\Models\Facility;
+use App\Models\Patient;
+use Illuminate\Http\Request;
+
+class PatientController extends Controller
+{
+    public function index(Request $request, Facility $facility)
+    {
+        $facilityStaff = auth()->user()?->staff?->facilityStaff()
+            ->where('facility_id', $facility->id)
+            ->first();
+
+        if (! $facilityStaff) {
+            return response()->json([
+                'message' => 'Unauthorized facility access.',
+            ], 403);
+        }
+
+        // Base permission check
+        $isOwner = $facilityStaff->role->slug === 'facility_owner';
+
+        // Base query depending on context
+        $query = Patient::query()
+            ->with([
+                'user',
+                'appointments.facilityStaff.staff.user',
+            ])
+            ->where('facility_id', $facility->id);
+
+        /**
+         * =========================
+         * CONTEXT RULES
+         * =========================
+         */
+        if (! $isOwner) {
+            // Doctor / Staff → only their patients
+            $query->whereHas('appointments', function ($q) use ($facilityStaff) {
+                $q->where('facility_staff_id', $facilityStaff->id);
+            });
+        }
+
+        /**
+         * =========================
+         * FILTERS
+         * =========================
+         */
+
+        // Search (name / phone)
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Staff filter (ONLY for owner or permissioned users)
+        if ($isOwner && $request->filled('facility_staff_id')) {
+            $query->whereHas('appointments', function ($q) use ($request) {
+                $q->where('facility_staff_id', $request->facility_staff_id);
+            });
+        }
+
+        // Status filter (if patient has status field later)
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        /**
+         * =========================
+         * RESULT
+         * =========================
+         */
+        $patients = $query
+            ->latest()
+            ->paginate($request->get('per_page', 15));
+
+        return response()->json($patients);
+    }
+}

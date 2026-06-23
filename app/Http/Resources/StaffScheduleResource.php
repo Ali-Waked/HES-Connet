@@ -17,8 +17,12 @@ class StaffScheduleResource extends JsonResource
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'slot_duration' => $this->slot_duration,
-            'staff' => new StaffListResource($this->whenLoaded('staff')),
-            'facility' => new FacilityResource($this->whenLoaded('facility')),
+            'is_active' => $this->is_active,
+            'facility_staff' => $this->whenLoaded('facilityStaff', fn () => [
+                'uuid' => $this->facilityStaff->uuid,
+                'staff' => new StaffListResource($this->facilityStaff->whenLoaded('staff')),
+                'facility' => new FacilityResource($this->facilityStaff->whenLoaded('facility')),
+            ]),
         ];
     }
 }

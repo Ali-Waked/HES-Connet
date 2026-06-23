@@ -21,6 +21,7 @@ class PrescriptionItemResource extends JsonResource
             'medicine' => $this->whenLoaded('medicine', fn () => [
                 'uuid' => $this->medicine->uuid,
                 'name' => $this->medicine->getTranslations('name'),
+                'image_url' => $this->medicine->image_url,
             ]),
         ];
     }

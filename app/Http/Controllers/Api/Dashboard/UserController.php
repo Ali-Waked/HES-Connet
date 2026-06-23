@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserSelectResource;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -90,5 +92,19 @@ class UserController extends Controller
             'success' => true,
             'data' => $this->getUserStats->execute(),
         ]);
+    }
+
+    public function select(): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    {
+        $query = User::query()->select(['id', 'uuid', 'name', 'email']);
+
+        if ($roleSlug = request('role')) {
+            $role = Role::where('slug', $roleSlug)->first();
+            if ($role) {
+                $query->whereHas('systemRoles', fn ($q) => $q->where('slug', $roleSlug));
+            }
+        }
+
+        return UserSelectResource::collection($query->latest()->get());
     }
 }

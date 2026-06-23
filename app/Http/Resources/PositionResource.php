@@ -17,7 +17,7 @@ final class PositionResource extends JsonResource
     public function toArray(Request $request): array
     {
         $isAdmin = $request->is('api/admin/*')
-            || (($request->user()?->role?->name['en'] ?? null) === 'admin');
+            || ($request->user() && $request->user()->hasSystemRole('super_admin'));
 
         return [
             'uuid' => $this->uuid,

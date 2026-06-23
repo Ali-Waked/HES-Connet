@@ -23,7 +23,7 @@ class StaffScheduleController extends Controller
         return StaffScheduleResource::collection(
             $this->staff_schedule_service->paginate(
                 (int) request('per_page', 15),
-                request('staff_id')
+                request('facility_staff_id')
             )
         );
     }
