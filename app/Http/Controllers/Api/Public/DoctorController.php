@@ -22,7 +22,6 @@ class DoctorController extends Controller
 {
     public function index(DoctorRequest $request): DoctorCollection
     {
-        info('hi');
         $doctors = Staff::query()
             ->with('facilities')
             ->withCount('facilities as facilities_count')

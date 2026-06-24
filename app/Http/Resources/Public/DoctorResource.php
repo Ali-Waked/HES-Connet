@@ -11,8 +11,12 @@ class DoctorResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        info(['uuid' => $this->uuid,
+            'user_uuid' => $this->user->uuid]);
+
         return [
             'uuid' => $this->uuid,
+            'user_uuid' => $this->user->uuid,
             'name' => $this->user?->getTranslations('name'),
             'specialization' => $this->getTranslations('specialization'),
             'avatar' => $this->user->avatar,
