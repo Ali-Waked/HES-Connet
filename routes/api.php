@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\Dashboard\AppointmentController;
 use App\Http\Controllers\Api\Dashboard\ArticleController;
 use App\Http\Controllers\Api\Dashboard\CategoryController;
 use App\Http\Controllers\Api\Dashboard\ConversationManagementController;
+use App\Http\Controllers\Api\Dashboard\DashboardAnalyticsController;
 use App\Http\Controllers\Api\Dashboard\DepartmentController;
 use App\Http\Controllers\Api\Dashboard\FacilityController;
 use App\Http\Controllers\Api\Dashboard\FacilityReviewController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Api\Dashboard\PatientController;
 use App\Http\Controllers\Api\Dashboard\PermissionController;
 use App\Http\Controllers\Api\Dashboard\PlatformReviewController as DashboardPlatformReviewController;
 use App\Http\Controllers\Api\Dashboard\PositionController;
+use App\Http\Controllers\Api\Dashboard\PrescriptionController;
 use App\Http\Controllers\Api\Dashboard\RoleController;
 use App\Http\Controllers\Api\Dashboard\ScheduleController;
 use App\Http\Controllers\Api\Dashboard\StaffController;
@@ -50,6 +52,7 @@ use App\Http\Controllers\Api\Public\FacilityController as PublicFacilityControll
 use App\Http\Controllers\Api\Public\HomeController as PublicHomeController;
 use App\Http\Controllers\Api\Public\PageController as PublicPageController;
 use App\Http\Controllers\Api\Public\ReviewController as PublicReviewController;
+use App\Http\Controllers\Api\Public\StoryController;
 use App\Http\Controllers\Api\Staff\ArticleController as StaffArticleController;
 use App\Http\Controllers\Api\Staff\AvailabilityController as StaffAvailabilityController;
 use App\Http\Controllers\Api\Staff\MedicationRequestController as StaffMedicationRequestController;
@@ -109,6 +112,7 @@ Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'prof
 Route::middleware('auth:sanctum')->prefix('conversations')->name('conversations.')->group(function () {
     Route::get('/', [ConversationController::class, 'index'])->name('index');
     Route::post('/', [ConversationController::class, 'store'])->name('store');
+    Route::post('/find-or-create', [ConversationController::class, 'findOrCreate']);
     Route::get('{conversation}', [ConversationController::class, 'show'])->name('show');
     Route::post('{conversation}/messages', [ConversationController::class, 'storeMessage'])->name('messages.store');
     Route::post('{conversation}/read', [ConversationController::class, 'markAsRead'])->name('read');
@@ -122,6 +126,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/medicines', [MedicineController::class, 'index']);
     Route::get('/medicines/lookup', [MedicineController::class, 'lookup']);
     Route::get('/medicines/{medicine}', [MedicineController::class, 'show']);
+    Route::post('/stories', [StoryController::class, 'store']);
 });
 
 Route::middleware(['auth:sanctum', 'permission:medicines.manage'])->group(function () {
@@ -191,6 +196,11 @@ Route::middleware(['auth:sanctum', 'dashboard.access:admin'])->prefix('dashboard
         'facilities/{facility:uuid}/review-stats',
         [FacilityReviewController::class, 'stats']
     )->name('facility-reviews.stats');
+
+    Route::get('/prescriptions', [PrescriptionController::class, 'index']);
+    Route::get('/prescriptions/analytics', [DashboardAnalyticsController::class, 'dashboard']);
+    Route::get('/medication-requests', [App\Http\Controllers\Api\Dashboard\MedicationRequestController::class, 'index']);
+    Route::get('/medication-requests/analytics', [DashboardAnalyticsController::class, 'requestAnalytics']);
 
     Route::get('/facilities/stats', [FacilityController::class, 'stats']);
     Route::get('/facilities/{facility}/edit', [FacilityController::class, 'edit']);
@@ -411,15 +421,12 @@ Route::middleware(['auth:sanctum'])
 Route::middleware(['auth:sanctum', 'dashboard.access:admin'])
     ->prefix('admin')
     ->group(function () {
-        Route::get('/medicines', [AdminPrescriptionController::class, 'medicinesIndex']);
-        Route::post('/medicines', [AdminPrescriptionController::class, 'medicinesStore']);
-        Route::get('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesShow']);
-        Route::put('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesUpdate']);
-        Route::delete('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesDestroy']);
+        // Route::get('/medicines', [AdminPrescriptionController::class, 'medicinesIndex']);
+        // Route::post('/medicines', [AdminPrescriptionController::class, 'medicinesStore']);
+        // Route::get('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesShow']);
+        // Route::put('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesUpdate']);
+        // Route::delete('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesDestroy']);
 
-        Route::get('/prescriptions', [AdminPrescriptionController::class, 'prescriptions']);
-        Route::get('/medication-requests', [AdminPrescriptionController::class, 'medicationRequests']);
-        Route::get('/prescriptions/analytics', [AdminPrescriptionController::class, 'analytics']);
     });
 
 // =============================================================================

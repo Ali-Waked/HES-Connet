@@ -13,6 +13,8 @@ class StoreMessageRequest extends FormRequest
 
     public function rules(): array
     {
+        info($this->all());
+
         return [
             'message' => ['required', 'string', 'max:10000'],
         ];
