@@ -63,10 +63,10 @@ class MedicationRequestController extends Controller
             __('Only pending requests can be accepted.')
         );
 
-        DB::transaction(function () use ($medicationRequest, $staff, $request) {
+        DB::transaction(function () use ($medicationRequest, $request) {
             $medicationRequest->update([
                 'status' => 'approved',
-                'pharmacist_id' => $staff->id,
+                // 'pharmacist_id' => $staff->id,
                 'notes' => $request->input('notes', $medicationRequest->notes),
             ]);
 
@@ -101,10 +101,10 @@ class MedicationRequestController extends Controller
             __('Only pending requests can be rejected.')
         );
 
-        DB::transaction(function () use ($medicationRequest, $staff, $request) {
+        DB::transaction(function () use ($medicationRequest, $request) {
             $medicationRequest->update([
                 'status' => 'rejected',
-                'pharmacist_id' => $staff->id,
+                // 'pharmacist_id' => $staff->id,
                 'notes' => $request->input('notes'),
             ]);
 

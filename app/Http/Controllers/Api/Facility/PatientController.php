@@ -30,7 +30,9 @@ class PatientController extends Controller
                 'user',
                 'appointments.facilityStaff.staff.user',
             ])
-            ->where('facility_id', $facility->id);
+            ->whereHas('appointments.facilityStaff', function ($q) use ($facility) {
+                $q->where('facility_id', $facility->id);
+            });
 
         /**
          * =========================
@@ -77,8 +79,9 @@ class PatientController extends Controller
          * RESULT
          * =========================
          */
+        $query->withMax('appointments', 'start_at');
         $patients = $query
-            ->latest()
+            ->orderByDesc('appointments_max_start_at')
             ->paginate($request->get('per_page', 15));
 
         return response()->json($patients);

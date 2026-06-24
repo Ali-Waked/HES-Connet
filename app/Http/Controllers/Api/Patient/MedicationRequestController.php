@@ -60,7 +60,6 @@ class MedicationRequestController extends Controller
      */
     public function show(Request $request, string $uuid): JsonResponse
     {
-        info($uuid);
         $patient = $request->user()->patientProfile;
 
         abort_unless($patient, 403, __('Patient profile not found.'));
@@ -70,9 +69,26 @@ class MedicationRequestController extends Controller
             ->where('patient_id', $patient->id)
             ->with([
                 'facility:id,uuid,name,cover_image,latitude,longitude',
-                'prescription.items.medicine',
+                'prescription.items.medicine.pharmacyMedicines',
             ])
             ->firstOrFail();
+
+        $totalPrice = 0;
+
+        $medicationRequest->prescription->items->each(function ($item) use (&$totalPrice, $medicationRequest) {
+
+            $pharmacyMedicine = $item->medicine->pharmacyMedicines
+                ->firstWhere('facility_id', $medicationRequest->facility_id);
+
+            $unitPrice = $pharmacyMedicine?->price ?? 0;
+
+            $item->unit_price = $unitPrice;
+            $item->total_price = $unitPrice * $item->quantity;
+
+            $totalPrice += $item->total_price;
+        });
+
+        $medicationRequest->total_price = $totalPrice;
 
         return response()->json([
             'data' => $medicationRequest,
