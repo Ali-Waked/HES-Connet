@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\LocaleType;
 use App\Enums\Provider;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,12 +15,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
 /**
@@ -40,32 +42,40 @@ use Spatie\Translatable\HasTranslations;
  * @property-read Patient|null $patientProfile
  * @property-read Facility|null $activeWorkspace
  */
-#[Fillable(['name', 'email', 'password', 'provider', 'provider_id', 'last_seen_at', 'city_id', 'avatar', 'cover_image'])]
+#[Fillable(['name', 'email', 'password', 'provider', 'provider_id', 'last_seen_at', 'active_workspace_id', 'city_id', 'locale', 'email_notifications', 'push_notifications', 'sms_notifications'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
+#[Translatable(['name'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasUuids, Notifiable;
+    use HasApiTokens, HasFactory, HasUuids, Notifiable, SoftDeletes;
 
     use HasTranslations;
-
-    public array $translatable = ['name'];
 
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'locale' => LocaleType::class,
             'provider' => Provider::class,
             'last_seen_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             'name' => 'array',
+            'email_notifications' => 'boolean',
+            'push_notifications' => 'boolean',
+            'sms_notifications' => 'boolean',
         ];
     }
 
     public function uniqueIds(): array
     {
         return ['uuid'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
     }
 
     public function systemRoles(): BelongsToMany
@@ -116,6 +126,20 @@ class User extends Authenticatable
     public function favorites(): HasMany
     {
         return $this->hasMany(Favorite::class);
+    }
+
+    private ?Collection $favoritedCache = null;
+
+    public function hasFavorited($model): bool
+    {
+        if (! $this->favoritedCache) {
+            $this->favoritedCache = $this->favorites()->get();
+        }
+
+        return $this->favoritedCache
+            ->where('favoritable_id', $model->id)
+            ->where('favoritable_type', get_class($model))
+            ->isNotEmpty();
     }
 
     public function files(): HasMany
@@ -176,7 +200,16 @@ class User extends Authenticatable
         }
 
         $activeFs = $this->getActiveFacilityStaff();
-        if ($activeFs && $activeFs->role) {
+        if (! $activeFs) {
+            return false;
+        }
+
+        $override = $activeFs->getPermissionOverride($permission);
+        if ($override !== null) {
+            return $override;
+        }
+
+        if ($activeFs->role) {
             return $activeFs->role->permissions()
                 ->where('key', $permission)
                 ->exists();
@@ -200,8 +233,8 @@ class User extends Authenticatable
 
         $activeFs = $this->getActiveFacilityStaff();
 
-        $facilityPermissions = $activeFs && $activeFs->role
-            ? $activeFs->role->permissions
+        $facilityPermissions = $activeFs
+            ? $activeFs->getEffectivePermissions()
             : collect();
 
         return $systemPermissions->merge($facilityPermissions)->unique('id');
@@ -236,12 +269,17 @@ class User extends Authenticatable
         return $staff->facilityStaff()
             ->with([
                 'facility',
-                'role',
                 'role.permissions',
+                'permissionOverrides.permission',
             ])
             ->whereNull('ended_at')
             ->get()
             ->map(function (FacilityStaff $fs) {
+
+                if (! $fs->facility || ! $fs->role) {
+                    return null;
+                }
+
                 return [
                     'workspace_id' => $fs->id,
 
@@ -249,7 +287,7 @@ class User extends Authenticatable
                         'id' => $fs->facility->id,
                         'uuid' => $fs->facility->uuid,
                         'name' => $fs->facility->name,
-                        'type' => $fs->facility->type,
+                        'type' => $fs->facility->facility_type,
                     ],
 
                     'role' => [
@@ -259,44 +297,66 @@ class User extends Authenticatable
                         'slug' => $fs->role->slug,
                     ],
 
-                    'permissions' => $fs->role
-                        ->permissions
-                        ->pluck('key')
-                        ->values(),
+                    'permissions' => $fs->getEffectivePermissions()->pluck('key')->values(),
                 ];
-            });
+            })
+            ->filter(); // removes nulls
     }
 
-    public function getDashboardRouteAttribute(): string
+    public function getActiveWorkspacePermissions(): Collection
     {
+        $activeFs = $this->getActiveFacilityStaff();
+
+        return $activeFs
+            ? $activeFs->getEffectivePermissions()->pluck('key')
+            : collect();
+    }
+
+    public function getDashboardRouteAttribute(): ?string
+    {
+        // 1. System admin (highest priority)
         if ($this->hasSystemRole('super_admin')) {
-            return '/admin/dashboard';
+            return '/platform/dashboard';
         }
 
         $activeFs = $this->getActiveFacilityStaff();
 
-        if ($activeFs && $activeFs->role?->slug === 'doctor') {
-            return '/staff/dashboard';
+        if (! $activeFs || ! $activeFs->role) {
+            return '/select-workspace';
         }
 
-        if ($this->hasSystemRole('facility_owner')) {
-            return '/facility/dashboard';
+        $facilityType = $activeFs->facility?->facility_type;
+        $permissions = $activeFs->getEffectivePermissions()->pluck('key')->toArray();
+
+        // 2. Facility Admins (permission-based, not slug-based)
+        if (in_array($facilityType, ['hospital', 'clinic'])) {
+            if (in_array('view_facility_dashboard', $permissions)) {
+                return '/facility/dashboard';
+            }
         }
 
-        if ($this->patientProfile()->exists()) {
-            return '/patient/dashboard';
+        // 3. Doctor (permission-driven)
+        if (in_array('create_medical_record', $permissions) ||
+            in_array('view_patients', $permissions)) {
+            return '/dashboard';
         }
 
-        return '/';
+        // 4. Pharmacy (permission-driven)
+        if (in_array('view_medicines', $permissions)) {
+            return '/pharmacy/dashboard';
+        }
+
+        // 5. Fallback
+        return '/dashboard';
     }
 
-    public function getCoverImageAttribute(?string $value): ?string
+    public function getCoverImageAttribute(): ?string
     {
-        return $value ? Storage::disk('public')->url($value) : null;
+        return $this->profile?->cover_image;
     }
 
-    public function getAvatarAttribute(?string $value): ?string
+    public function getAvatarAttribute(): ?string
     {
-        return $value ? Storage::disk('public')->url($value) : null;
+        return $this->profile?->profile_image;
     }
 }

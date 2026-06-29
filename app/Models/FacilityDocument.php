@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\FacilityDocumentStatus;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
-
 
 /**
  * @property-read int $id
@@ -17,20 +18,14 @@ use Illuminate\Support\Facades\Storage;
  * @property string $file_url
  * @property FacilityDocumentStatus $status
  * @property string $document_type
- * @property-read \Illuminate\Support\Carbon|null $created_at
- * @property-read \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Facility $facility
+ * @property-read Carbon|null $created_at
+ * @property-read Carbon|null $updated_at
+ * @property-read Facility $facility
  */
+#[Fillable(['facility_id', 'document_type', 'status', 'file_url'])]
 class FacilityDocument extends Model
 {
     use HasUuids;
-
-    protected $fillable = [
-        'facility_id',
-        'document_type',
-        'status',
-        'file_url',
-    ];
 
     public function uniqueIds(): array
     {
@@ -53,8 +48,16 @@ class FacilityDocument extends Model
     {
         return $this->belongsTo(Facility::class);
     }
-      public function getFileUrlttribute(?string $value): ?string
+
+    public function getFileUrlAttribute(?string $value): ?string
     {
-        return $value ? Storage::disk('public')->url($value) : null;
+        if (! $value) {
+            return null;
+        }
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        return Storage::disk('public')->url($value);
     }
 }

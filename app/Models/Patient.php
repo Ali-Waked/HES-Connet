@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AccountStatus;
+use Database\Factories\PatientFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,22 +18,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int $id
  * @property int $user_id
  * @property string|null $medical_history
- * @property-read \App\Models\User $user
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Appointment> $appointments
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Review> $reviews
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Story> $stories
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MedicationRequest> $medicationRequests
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\FacilityReview> $facilityReviews
+ * @property-read User $user
+ * @property-read Collection<int, Appointment> $appointments
+ * @property-read Collection<int, Review> $reviews
+ * @property-read Collection<int, Story> $stories
+ * @property-read Collection<int, MedicationRequest> $medicationRequests
+ * @property-read Collection<int, FacilityReview> $facilityReviews
  */
+#[Fillable(['user_id', 'medical_history', 'status'])]
 class Patient extends Model
 {
-    public $timestamps = false;
-
-    protected $fillable = [
-        'user_id',
-        'medical_history',
-        'status',
-    ];
+    /** @use HasFactory<PatientFactory> */
+    use HasFactory;
 
     public function user(): BelongsTo
     {

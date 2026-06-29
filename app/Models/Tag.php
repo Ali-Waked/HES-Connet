@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\TagFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Translatable\Attributes\Translatable;
@@ -15,9 +17,10 @@ use Spatie\Translatable\HasTranslations;
 #[Translatable(['name'])]
 class Tag extends Model
 {
-    use HasTranslations, HasUuids;
+    /** @use HasFactory<TagFactory> */
+    use HasFactory;
 
-    public array $translatable = ['name'];
+    use HasTranslations, HasUuids;
 
     public function uniqueIds(): array
     {

@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\FacilityStaffFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -20,22 +25,15 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property-read Facility $facility
  * @property-read Department|null $department
  */
+#[Fillable(['staff_id', 'facility_id', 'department_id', 'position_id', 'position', 'role_id', 'joined_at', 'ended_at'])]
 class FacilityStaff extends Pivot
 {
+    /** @use HasFactory<FacilityStaffFactory> */
+    use HasFactory;
+
     use HasUuids;
 
     protected $table = 'facility_staff';
-
-    protected $fillable = [
-        'staff_id',
-        'facility_id',
-        'department_id',
-        'position_id',
-        'position',
-        'role_id',
-        'joined_at',
-        'ended_at',
-    ];
 
     public function uniqueIds(): array
     {
@@ -98,5 +96,56 @@ class FacilityStaff extends Pivot
     public function unavailabilities(): HasMany
     {
         return $this->hasMany(StaffUnavailability::class, 'facility_staff_id');
+    }
+
+    public function symptoms(): BelongsToMany
+    {
+        return $this->belongsToMany(Symptom::class, 'facility_staff_symptom')
+            ->withTimestamps();
+    }
+
+    public function headedDepartment()
+    {
+        return $this->hasOne(Department::class, 'head_facility_staff_id');
+    }
+
+    public function permissionOverrides(): HasMany
+    {
+        return $this->hasMany(FacilityStaffPermission::class, 'facility_staff_id');
+    }
+
+    public function getEffectivePermissions(): Collection
+    {
+        if (! $this->role) {
+            return collect();
+        }
+
+        $overrides = $this->permissionOverrides;
+        $overrides->loadMissing('permission');
+
+        $disabledIds = $overrides->where('enabled', false)->pluck('permission_id')->toArray();
+
+        $enabled = $overrides->where('enabled', true)
+            ->map(fn (FacilityStaffPermission $override) => $override->permission)
+            ->filter();
+
+        return $this->role->permissions
+            ->reject(fn (Permission $permission) => in_array($permission->id, $disabledIds, true))
+            ->merge($enabled)
+            ->unique('id')
+            ->values();
+    }
+
+    public function getPermissionOverride(string $key): ?bool
+    {
+        $override = $this->permissionOverrides()
+            ->whereHas('permission', fn ($query) => $query->where('key', $key))
+            ->first();
+
+        if (! $override) {
+            return null;
+        }
+
+        return $override->enabled;
     }
 }

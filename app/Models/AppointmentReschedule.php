@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable([
+    'appointment_id',
+    'old_start_at',
+    'old_end_at',
+    'new_start_at',
+    'new_end_at',
+    'reason',
+])]
 class AppointmentReschedule extends Model
 {
-    protected $fillable = [
-        'appointment_id',
-        'old_start_at',
-        'old_end_at',
-        'new_start_at',
-        'new_end_at',
-        'reason',
-    ];
-
     protected function casts(): array
     {
         return [

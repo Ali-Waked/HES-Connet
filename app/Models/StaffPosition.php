@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\StaffPositionFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
+#[Translatable(['name', 'description'])]
+#[Fillable(['uuid', 'name', 'description', 'is_active'])]
 class StaffPosition extends Model
 {
+    /** @use HasFactory<StaffPositionFactory> */
+    use HasFactory;
+
     use HasTranslations, HasUuids;
-
-    public array $translatable = ['name', 'description'];
-
-    protected $fillable = [
-        'uuid',
-        'name',
-        'description',
-        'is_active',
-    ];
 
     protected function casts(): array
     {

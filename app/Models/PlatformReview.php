@@ -4,29 +4,80 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\PlatformReviewFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[Fillable(['user_id', 'rating', 'comment', 'reply', 'replied_by', 'replied_at', 'is_featured', 'status'])]
 class PlatformReview extends Model
 {
-    protected $fillable = [
-        'user_id',
-        'rating',
-        'comment',
-        'status',
-        'is_featured',
-    ];
+    /** @use HasFactory<PlatformReviewFactory> */
+    use HasFactory;
 
     protected function casts(): array
     {
         return [
             'is_featured' => 'boolean',
-            'rating' => 'integer',
+            'replied_at' => 'datetime',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function repliedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'replied_by');
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(ReviewNotification::class, 'review_id');
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', 'published');
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('status', 'published');
+    }
+
+    public function scopeHidden(Builder $query): Builder
+    {
+        return $query->where('status', 'hidden');
+    }
+
+    public function hasAdminReply(): bool
+    {
+        return $this->admin_reply !== null;
+    }
+
+    public function isHighRating(): bool
+    {
+        return $this->rating >= 4;
+    }
+
+    public function isNeutralRating(): bool
+    {
+        return $this->rating === 3;
+    }
+
+    public function isLowRating(): bool
+    {
+        return $this->rating <= 2;
     }
 }

@@ -1,18 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Database\Factories\PharmacyMedicineFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable('facility_id', 'medicine_id', 'is_available', 'stock', 'price')]
 class PharmacyMedicine extends Model
 {
+    /** @use HasFactory<PharmacyMedicineFactory> */
+    use HasFactory;
+
     use HasUuids;
 
-    //  protected $table = 'pharmacy_medicines';
     protected function casts(): array
     {
         return [
@@ -50,7 +57,7 @@ class PharmacyMedicine extends Model
     public function decreaseStock(int $quantity): void
     {
         if ($quantity > $this->stock) {
-            throw new \Exception('Insufficient stock');
+            throw new \InvalidArgumentException('Insufficient stock');
         }
 
         $this->decrement('stock', $quantity);
@@ -61,7 +68,7 @@ class PharmacyMedicine extends Model
         $this->increment('stock', $quantity);
     }
 
-    public function scopeAvailable($query)
+    public function scopeAvailable(Builder $query): Builder
     {
         return $query->where('is_available', true)
             ->where('stock', '>', 0);

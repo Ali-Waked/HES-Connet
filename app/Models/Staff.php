@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AccountStatus;
+use Database\Factories\StaffFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
 /**
@@ -31,25 +36,13 @@ use Spatie\Translatable\HasTranslations;
  * @property-read Collection<int, Prescription> $prescriptions
  * @property-read Collection<int, Article> $articles
  * @property-read Collection<int, Review> $reviews
- * @property-read Collection<int, Symptom> $symptoms
  */
+#[Fillable(['user_id', 'profession_id', 'specialization', 'experience_years', 'bio', 'consultation_fee', 'status', 'staff_position_id'])]
+#[Translatable(['specialization', 'bio'])]
 class Staff extends Model
 {
-    use HasTranslations, HasUuids;
-
-    public $timestamps = false;
-
-    protected $fillable = [
-        'user_id',
-        'specialization',
-        'experience_years',
-        'bio',
-        'consultation_fee',
-        'status',
-        'staff_position_id',
-    ];
-
-    public array $translatable = ['specialization', 'bio'];
+    /** @use HasFactory<StaffFactory> */
+    use HasFactory, HasTranslations, HasUuids;
 
     protected function casts(): array
     {
@@ -80,6 +73,11 @@ class Staff extends Model
         return $this->belongsTo(StaffPosition::class, 'staff_position_id');
     }
 
+    public function profession(): BelongsTo
+    {
+        return $this->belongsTo(Profession::class);
+    }
+
     public function facilityStaff(): HasMany
     {
         return $this->hasMany(FacilityStaff::class);
@@ -87,15 +85,8 @@ class Staff extends Model
 
     public function departmentsAsHead(): HasMany
     {
-        return $this->hasMany(Department::class, 'head_id');
+        return $this->hasMany(Department::class, 'head_facility_staff_id');
     }
-
-    // public function facilities(): BelongsToMany
-    // {
-    //     return $this->belongsToMany(Facility::class, 'facility_staff')
-    //         ->withPivot('position')
-    //         ->withTimestamps();
-    // }
 
     public function facilities()
     {
@@ -116,8 +107,12 @@ class Staff extends Model
 
     public function departments(): BelongsToMany
     {
-        return $this->belongsToMany(Department::class, 'facility_staff', 'staff_id', 'department_id')
-            ->distinct();
+        return $this->belongsToMany(
+            Department::class,
+            'facility_staff',
+            'staff_id',
+            'department_id'
+        )->whereNotNull('department_id')->distinct();
     }
 
     public function headFacilities(): HasMany
@@ -166,11 +161,6 @@ class Staff extends Model
         return $this->hasMany(Review::class);
     }
 
-    public function symptoms(): BelongsToMany
-    {
-        return $this->belongsToMany(Symptom::class, 'doctor_symptom', 'staff_id', 'symptom_id');
-    }
-
     public function scopeOfStatus(Builder $query, string $status): Builder
     {
         return $query->where('status', $status);
@@ -193,7 +183,7 @@ class Staff extends Model
     {
         return $query->whereHas('facilityStaff', fn (Builder $q) => $q
             ->whereNull('ended_at')
-            ->whereHas('role', fn (Builder $rq) => $rq->where('slug', 'doctor'))
+            ->whereHas('role', fn (Builder $rq) => $rq->where('slug', 'doctor_portal_user'))
         );
     }
 
@@ -218,5 +208,10 @@ class Staff extends Model
             })
             ->values()
             ->toArray();
+    }
+
+    public function favorites(): MorphMany
+    {
+        return $this->morphMany(Favorite::class, 'favoritable');
     }
 }

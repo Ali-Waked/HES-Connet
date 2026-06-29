@@ -4,32 +4,33 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\RoleFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
 /**
  * @property-read int $id
  * @property array $name
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Permission> $permissions
+ * @property-read Collection<int, User> $users
+ * @property-read Collection<int, Permission> $permissions
  */
+#[Translatable(['name'])]
+#[Fillable(['name', 'slug', 'scope', 'description', 'is_system', 'is_active'])]
 class Role extends Model
 {
-    use HasTranslations, HasUuids;
-    public array $translatable = ['name'];
-    protected $fillable = [
-        'name',
-        'slug',
-        'scope',
-        'description',
-        'is_system',
-        'is_active',
-    ];
+    /** @use HasFactory<RoleFactory> */
+    use HasFactory;
 
-     public function uniqueIds(): array
+    use HasTranslations, HasUuids;
+
+    public function uniqueIds(): array
     {
         return ['uuid'];
     }

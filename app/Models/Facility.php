@@ -7,14 +7,19 @@ namespace App\Models;
 use App\Enums\FacilityApprovalStatus;
 use App\Enums\FacilityStatus;
 use App\Enums\FacilityType;
+use Database\Factories\FacilityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
 /**
@@ -26,7 +31,7 @@ use Spatie\Translatable\HasTranslations;
  * @property FacilityStatus $status
  * @property FacilityApprovalStatus $approval_status
  * @property int|null $organization_id
- * @property int|null $parent_id
+ * @property int|null $owner_id
  * @property int|string|null $created_by
  * @property-read Organization|null $organization
  * @property-read Facility|null $parent
@@ -42,11 +47,13 @@ use Spatie\Translatable\HasTranslations;
  * @property-read Collection<int, MedicationRequest> $medicationRequests
  */
 #[Fillable(['name', 'latitude', 'longitude', 'facility_type', 'organization_id', 'owner_id', 'parent_id', 'created_by', 'status', 'approval_status', 'cover_image', 'city_id', 'is_featured'])]
+#[Translatable(['name', 'description'])]
 class Facility extends Model
 {
-    use HasTranslations, HasUuids;
+    /** @use HasFactory<FacilityFactory> */
+    use HasFactory;
 
-    public array $translatable = ['name', 'description'];
+    use HasTranslations, HasUuids;
 
     protected function casts(): array
     {
@@ -132,25 +139,29 @@ class Facility extends Model
         );
     }
 
-    public function departments(): HasMany
+    public function departments(): HasManyThrough
     {
-        return $this->hasMany(Department::class);
+        return $this->hasManyThrough(
+            Department::class,
+            FacilityStaff::class,
+            'facility_id',
+            'id',
+            'id',
+            'department_id',
+        )->whereNotNull('department_id')->distinct();
     }
 
     public function getCoverImageAttribute(?string $value): ?string
     {
-        return $value ? Storage::disk('public')->url($value) : null;
+        if (! $value) {
+            return null;
+        }
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        return Storage::disk('public')->url($value);
     }
-
-    // public function appointments(): HasMany
-    // {
-    //     return $this->hasMany(Appointment::class);
-    // }
-
-    // public function pharmacyInventory(): HasMany
-    // {
-    //     return $this->hasMany(PharmacyInventory::class);
-    // }
 
     public function pharmacyMedicines(): HasMany
     {
@@ -162,13 +173,28 @@ class Facility extends Model
         return $this->hasMany(FacilityReview::class);
     }
 
-    // public function jobPosts(): HasMany
-    // {
-    //     return $this->hasMany(JobPost::class);
-    // }
+    public function publicReviews(): HasMany
+    {
+        return $this->hasMany(FacilityReview::class)->where('is_visible', true);
+    }
+
+    public function jobPosts(): HasMany
+    {
+        return $this->hasMany(JobPost::class);
+    }
 
     public function medicationRequests(): HasMany
     {
         return $this->hasMany(MedicationRequest::class);
+    }
+
+    public function favorites(): MorphMany
+    {
+        return $this->morphMany(Favorite::class, 'favoritable');
+    }
+
+    public function scopeApproved(Builder $query): void
+    {
+        $query->where('approval_status', FacilityApprovalStatus::APPROVED);
     }
 }

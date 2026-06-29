@@ -4,27 +4,24 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property-read int $id
  * @property int $facility_id
  * @property string $image_url
- * @property-read \App\Models\Facility $facility
+ * @property-read Facility $facility
  */
+#[Fillable(['facility_id', 'image_url'])]
 class FacilityImage extends Model
 {
     use HasUuids;
 
     public $timestamps = false;
-
-    protected $fillable = [
-        'facility_id',
-        'image_url',
-    ];
 
     public function uniqueIds(): array
     {
@@ -40,8 +37,16 @@ class FacilityImage extends Model
     {
         return $this->belongsTo(Facility::class);
     }
-      public function getImageUrlAttribute(?string $value): ?string
+
+    public function getImageUrlAttribute(?string $value): ?string
     {
-        return $value ? Storage::disk('public')->url($value) : null;
+        if (! $value) {
+            return null;
+        }
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        return Storage::disk('public')->url($value);
     }
 }

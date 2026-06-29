@@ -5,32 +5,39 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ArticleStatus;
+use Database\Factories\ArticleFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
+#[Fillable([
+    'uuid',
+    'author_id',
+    'title',
+    'status',
+    'content',
+    'category_id',
+    'cover_image',
+    'views',
+    'published_at',
+    'meta',
+])]
+#[Translatable(['title', 'content'])]
 class Article extends Model
 {
+    /** @use HasFactory<ArticleFactory> */
+    use HasFactory;
+
     use HasTranslations, HasUuids;
-
-    public array $translatable = ['title', 'content'];
-
-    protected $fillable = [
-        'uuid',
-        'author_id',
-        'title',
-        'status',
-        'content',
-        'category_id',
-        'cover_image',
-        'views',
-        'published_at',
-    ];
 
     protected function casts(): array
     {
@@ -39,6 +46,7 @@ class Article extends Model
             'content' => 'array',
             'status' => ArticleStatus::class,
             'views' => 'integer',
+            'meta' => 'array',
         ];
     }
 
@@ -54,7 +62,14 @@ class Article extends Model
 
     public function getCoverImageAttribute(?string $value): ?string
     {
-        return $value ? Storage::disk('public')->url($value) : null;
+        if (! $value) {
+            return null;
+        }
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        return Storage::disk('public')->url($value);
     }
 
     public function author(): BelongsTo
@@ -72,14 +87,14 @@ class Article extends Model
         return $this->belongsToMany(Tag::class);
     }
 
-    public function images(): HasMany
-    {
-        return $this->hasMany(ArticleImage::class);
-    }
-
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function favorites(): MorphMany
+    {
+        return $this->morphMany(Favorite::class, 'favoritable');
     }
 
     public function scopePublished(Builder $query): Builder

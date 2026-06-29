@@ -4,38 +4,45 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\DepartmentFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * @property-read string $uuid
  * @property array $name
- * @property int $facility_id
- * @property int|null $head_id
- * @property-read \App\Models\Facility $facility
- * @property-read \App\Models\Staff|null $head
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\FacilityStaff> $facilityStaff
+ * @property int $id
+ * @property int|null $head_facility_staff_id
+ * @property-read FacilityStaff|null $head
+ * @property-read Facility $facility
+ * @property-read Collection<int, FacilityStaff> $facilityStaff
  */
-#[Fillable(['name','facility_id','head_id','image','description','is_active'])]
-#[Translatable(['name','description'])]
+#[Fillable(['name', 'head_facility_staff_id', 'image', 'description', 'is_active'])]
+#[Translatable(['name', 'description'])]
 class Department extends Model
 {
-    use HasUuids, HasTranslations;
+    /** @use HasFactory<DepartmentFactory> */
+    use HasFactory;
 
-    protected function cats():array {
+    use HasTranslations, HasUuids;
+
+    protected function casts(): array
+    {
         return [
             'is_active' => 'boolean',
         ];
     }
 
-     public function uniqueIds(): array
+    public function uniqueIds(): array
     {
         return ['uuid'];
     }
@@ -47,7 +54,7 @@ class Department extends Model
 
     public function head(): BelongsTo
     {
-        return $this->belongsTo(Staff::class, 'head_id');
+        return $this->belongsTo(FacilityStaff::class, 'head_facility_staff_id');
     }
 
     public function facility(): BelongsTo
@@ -60,7 +67,13 @@ class Department extends Model
         return $this->hasMany(FacilityStaff::class);
     }
 
-    protected function image():Attribute {
-        return Attribute::make( get: fn ($value) => $value ? Storage::disk('public')->url($value) : null);
+    protected function image(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $value ? (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')
+                    ? $value
+                    : Storage::disk('public')->url($value))
+                : null
+        );
     }
 }

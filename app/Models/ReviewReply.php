@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['review_id', 'reply'])]
 class ReviewReply extends Model
@@ -21,7 +24,7 @@ class ReviewReply extends Model
         return 'uuid';
     }
 
-    public function review()
+    public function review(): BelongsTo
     {
         return $this->belongsTo(Review::class);
     }

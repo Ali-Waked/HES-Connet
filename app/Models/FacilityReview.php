@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\FacilityReviewFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable(['facility_id', 'patient_id', 'rating', 'comment', 'is_visible'])]
 class FacilityReview extends Model
 {
-    protected $fillable = [
-        'facility_id',
-        'patient_id',
-        'rating',
-        'comment',
-        'is_visible',
-    ];
+    /** @use HasFactory<FacilityReviewFactory> */
+    use HasFactory;
 
     protected function casts(): array
     {

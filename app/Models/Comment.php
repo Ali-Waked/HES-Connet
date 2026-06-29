@@ -4,16 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\CommentFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable([
+    'article_id',
+    'user_id',
+    'content',
+    'is_hidden',
+])]
 class Comment extends Model
 {
-    protected $fillable = [
-        'article_id',
-        'user_id',
-        'content',
-    ];
+    /** @use HasFactory<CommentFactory> */
+    use HasFactory;
 
     public function article(): BelongsTo
     {
@@ -23,5 +30,10 @@ class Comment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->where('is_hidden', false);
     }
 }

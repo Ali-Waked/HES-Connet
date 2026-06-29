@@ -1,36 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
+#[Fillable(['uuid', 'name', 'description', 'is_active'])]
+#[Translatable(['name', 'description'])]
 class Position extends Model
 {
-    use HasTranslations,HasUuids;
+    use HasTranslations, HasUuids;
 
-    public array $translatable = [
-        'name',
-        'description',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'name' => 'array',
+            'description' => 'array',
+            'is_active' => 'boolean',
+        ];
+    }
 
-    protected $fillable = [
-        'uuid',
-        'name',
-        'description',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'name' => 'array',
-        'description' => 'array',
-        'is_active' => 'boolean',
-    ];
-
-  public function uniqueIds(): array
+    public function uniqueIds(): array
     {
         return ['uuid'];
     }
@@ -39,6 +35,7 @@ class Position extends Model
     {
         return 'uuid';
     }
+
     public function facilityStaff(): HasMany
     {
         return $this->hasMany(FacilityStaff::class);

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\OrganizationType;
-use App\Models\OrganizationUser;
+use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -28,16 +29,12 @@ use Spatie\Translatable\HasTranslations;
 #[Translatable(['name', 'description'])]
 class Organization extends Model
 {
+    /** @use HasFactory<OrganizationFactory> */
+    use HasFactory;
+
     use HasTranslations, HasUuids;
 
-    //     protected $fillable = [
-    //         'name',
-    //         'type',
-    //     ];
-
-    //    public array $translatable = ['name', 'description'];
-
-    protected function catas(): array
+    protected function casts(): array
     {
         return [
             'type' => OrganizationType::class,

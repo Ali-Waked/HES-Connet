@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Fillable([
+    'conversation_id',
+    'user_id',
+    'last_read_at',
+])]
 class ConversationParticipant extends Model
 {
-    protected $fillable = [
-        'conversation_id',
-        'user_id',
-        'last_read_at',
-    ];
-
     protected function casts(): array
     {
         return [

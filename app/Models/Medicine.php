@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\MedicineFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Translatable\Attributes\Translatable;
 use Spatie\Translatable\HasTranslations;
 
 #[Fillable(['name', 'description', 'image_url'])]
+#[Translatable(['name', 'description'])]
 class Medicine extends Model
 {
-    use HasTranslations, HasUuids;
+    /** @use HasFactory<MedicineFactory> */
+    use HasFactory;
 
-    public array $translatable = ['name', 'description'];
+    use HasTranslations, HasUuids;
 
     public function uniqueIds(): array
     {
@@ -38,7 +43,14 @@ class Medicine extends Model
 
     public function getImageUrlAttribute(?string $value): ?string
     {
-        return $value ? Storage::disk('public')->url($value) : null;
+        if (! $value) {
+            return null;
+        }
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+
+        return Storage::disk('public')->url($value);
     }
 
     public function pharmacyMedicines(): HasMany
