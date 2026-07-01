@@ -2,10 +2,10 @@
 
 namespace App\Enums;
 
-enum FacilityDocumentStatus: string
+enum JobStatus: string
 {
     case PENDING = 'pending';
     case APPROVED = 'approved';
     case REJECTED = 'rejected';
-
+    case EXPIRED = 'expired';
 }
