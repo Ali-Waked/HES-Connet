@@ -5,13 +5,33 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Facility;
+use App\Models\FacilityStaff;
 use App\Models\Medicine;
 use App\Models\PharmacyMedicine;
 use App\Models\Staff;
+use Illuminate\Http\Request;
 
 class FacilityPortalService
 {
     public function __construct(private readonly UuidResolver $uuid_resolver) {}
+
+    public function resolveFacility(Request $request): Facility
+    {
+        $facilityStaff = $request->user()->getActiveFacilityStaff();
+
+        abort_unless($facilityStaff, 403, __('You do not have an active facility workspace.'));
+
+        return $facilityStaff->facility;
+    }
+
+    public function resolveFacilityStaff(Request $request): FacilityStaff
+    {
+        $facilityStaff = $request->user()->getActiveFacilityStaff();
+
+        abort_unless($facilityStaff, 403, __('You do not have an active facility workspace.'));
+
+        return $facilityStaff;
+    }
 
     public function paginate(Staff $staff, Facility $facility, int $perPage = 15, ?string $search = null)
     {

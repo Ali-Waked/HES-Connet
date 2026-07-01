@@ -88,6 +88,7 @@ class FacilityPortalTest extends TestCase
     private function createPatient(): Patient
     {
         $user = User::factory()->create();
+
         return Patient::create([
             'user_id' => $user->id,
             'medical_history' => null,
@@ -423,7 +424,7 @@ class FacilityPortalTest extends TestCase
         $facility = $this->createFacility($owner);
 
         $response = $this->actingAs($user, 'web')
-            ->getJson('/api/facility/dashboard?facility_id=' . $facility->uuid);
+            ->getJson('/api/facility/dashboard?facility_id='.$facility->uuid);
 
         $response->assertOk();
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Facility;
 
+use App\Enums\FacilityApprovalStatus;
+use App\Enums\FacilityStatus;
 use App\Enums\FacilityType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -11,9 +13,6 @@ use Illuminate\Validation\Rules\Enum;
 
 class UpdateFacilityRequest extends FormRequest
 {
-    /**
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
@@ -24,7 +23,6 @@ class UpdateFacilityRequest extends FormRequest
      */
     public function rules(): array
     {
-        info($this->all());
         return [
             'name' => ['sometimes', 'required', 'array'],
             'name.en' => ['sometimes', 'required', 'string', 'max:255'],
@@ -40,28 +38,9 @@ class UpdateFacilityRequest extends FormRequest
                 new Enum(FacilityType::class),
             ],
 
-            'status' => [
-                'sometimes',
-                'required',
-                Rule::in([
-                    'pending',
-                    'active',
-                    'inactive',
-                    'temporarily_closed',
-                    'permanently_closed',
-                ]),
-            ],
+            'status' => ['sometimes', 'required', new Enum(FacilityStatus::class)],
 
-            'approval_status' => [
-                'sometimes',
-                'required',
-                Rule::in([
-                    'pending',
-                    'approved',
-                    'rejected',
-                    'suspended',
-                ]),
-            ],
+            'approval_status' => ['sometimes', 'required', new Enum(FacilityApprovalStatus::class)],
 
             'organization_id' => ['nullable', 'uuid', 'exists:organizations,uuid'],
             'city_id' => ['nullable', 'uuid', 'exists:cities,uuid'],

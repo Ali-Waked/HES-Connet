@@ -9,21 +9,21 @@ use App\Http\Requests\Staff\CheckEmailRequest;
 use App\Http\Requests\Staff\StoreStaffRequest;
 use App\Http\Requests\Staff\UpdateStaffRequest;
 use App\Http\Resources\StaffResource;
-use App\Models\Staff;
+use App\Models\Facility;
 use App\Models\FacilityStaff;
+use App\Models\Staff;
 use App\Services\StaffService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class StaffController extends Controller
 {
-    public function __construct(private readonly StaffService $staff_service)
-    {
-    }
+    public function __construct(private readonly StaffService $staff_service) {}
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return AnonymousResourceCollection
      */
     public function index()
     {
@@ -40,14 +40,14 @@ class StaffController extends Controller
     {
         return response()->json(
             $this->staff_service->checkEmail($request->input('email'))
-            );
-            }
+        );
+    }
 
-            /**
-             * Store a newly created resource in storage.
-            */
-            public function store(StoreStaffRequest $request): JsonResponse
-            {
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreStaffRequest $request): JsonResponse
+    {
         info('hi in controller');
         $staff = $this->staff_service->create($request->validated());
 
@@ -63,6 +63,7 @@ class StaffController extends Controller
     public function show(Staff $staff): StaffResource
     {
         info($staff);
+
         return new StaffResource(
             $this->staff_service->show($staff)
         );
@@ -94,13 +95,35 @@ class StaffController extends Controller
     }
 
     public function terminate(FacilityStaff $staff)
-{
-    $staff->update([
-        'ended_at' => now(),
-    ]);
+    {
+        $staff->update([
+            'ended_at' => now(),
+        ]);
 
-    return response()->json([
-        'message' => 'Staff terminated successfully.',
-    ]);
-}
+        return response()->json([
+            'message' => 'Staff terminated successfully.',
+        ]);
+    }
+
+    public function lookup(Facility $facility): JsonResponse
+    {
+
+        $staff = FacilityStaff::with('staff')
+            ->where('facility_id', $facility->id)
+            ->whereDoesntHave('headedDepartment')
+            ->get()
+            ->map(function ($facilityStaff) {
+                return [
+                    'uuid' => $facilityStaff->uuid,
+                    'name' => $facilityStaff->staff->user->name,
+                    'specialization' => $facilityStaff->staff->specialization,
+                    'avatar' => $facilityStaff->staff->user->avatar,
+                ];
+            });
+
+        return response()->json([
+            'data' => $staff,
+        ]);
+
+    }
 }

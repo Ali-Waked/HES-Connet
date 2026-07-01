@@ -18,13 +18,12 @@ class DashboardConversationDetailsResource extends JsonResource
             'last_message_at' => $this->last_message_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'participants' => $this->whenLoaded('participants', fn () =>
-                $this->participants->map(fn ($user) => [
-                    'uuid' => $user->uuid,
-                    'name' => $user->getTranslations('name'),
-                    'email' => $user->email,
-                    'avatar' => $user->avatar,
-                ])
+            'participants' => $this->whenLoaded('participants', fn () => $this->participants->map(fn ($user) => [
+                'uuid' => $user->uuid,
+                'name' => $user->getTranslations('name'),
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+            ])
             ),
         ];
     }

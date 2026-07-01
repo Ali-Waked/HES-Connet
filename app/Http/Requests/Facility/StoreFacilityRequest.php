@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Facility;
 
+use App\Enums\FacilityApprovalStatus;
+use App\Enums\FacilityStatus;
 use App\Enums\FacilityType;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class StoreFacilityRequest extends FormRequest
 {
-    /**
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
@@ -38,26 +36,9 @@ class StoreFacilityRequest extends FormRequest
                 new Enum(FacilityType::class),
             ],
 
-            'status' => [
-                'required',
-                Rule::in([
-                    'pending',
-                    'active',
-                    'inactive',
-                    'temporarily_closed',
-                    'permanently_closed',
-                ]),
-            ],
+            'status' => ['required', new Enum(FacilityStatus::class)],
 
-            'approval_status' => [
-                'required',
-                Rule::in([
-                    'pending',
-                    'approved',
-                    'rejected',
-                    'suspended',
-                ]),
-            ],
+            'approval_status' => ['required', new Enum(FacilityApprovalStatus::class)],
 
             'organization_id' => ['nullable', 'uuid', 'exists:organizations,uuid'],
             'owner_id' => ['nullable', 'uuid', 'exists:users,uuid'],

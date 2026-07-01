@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Database\Factories\SymptomFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,7 +19,7 @@ use Spatie\Translatable\HasTranslations;
 class Symptom extends Model
 {
     /** @use HasFactory<SymptomFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasTranslations;
 

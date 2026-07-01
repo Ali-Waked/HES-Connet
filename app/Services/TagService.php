@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Events\TagCreated;
+use App\Events\TagDeleted;
+use App\Events\TagUpdated;
 use App\Models\Tag;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -25,19 +28,29 @@ class TagService
 
     public function create(array $data): Tag
     {
-        return Tag::create($data);
+        $tag = Tag::create($data);
+
+        event(new TagCreated($tag));
+
+        return $tag;
     }
 
     public function update(Tag $tag, array $data): Tag
     {
         $tag->update($data);
 
-        return $tag->refresh();
+        $tag = $tag->refresh();
+
+        event(new TagUpdated($tag));
+
+        return $tag;
     }
 
     public function destroy(Tag $tag): void
     {
         $tag->delete();
+
+        event(new TagDeleted($tag));
     }
 
     public function getStats(): array

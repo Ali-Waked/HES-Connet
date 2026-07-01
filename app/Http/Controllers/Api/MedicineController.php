@@ -48,11 +48,11 @@ class MedicineController extends Controller
         // $this->authorize('view', Medicine::class);
 
         return response()->json([
-            'data' =>[
+            'data' => [
                 'name' => $medicine->getTranslations('name'),
                 'description' => $medicine->getTranslations('description'),
                 'image_url' => $medicine->image_url,
-            ]
+            ],
         ]);
     }
 

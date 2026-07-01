@@ -18,6 +18,10 @@ class ArticleRequest extends FormRequest
         return [
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'created_from' => ['nullable', 'date'],
+            'created_to' => ['nullable', 'date'],
+            'sort_by' => ['nullable', 'in:latest,oldest'],
         ];
     }
 }

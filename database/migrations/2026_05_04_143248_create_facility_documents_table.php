@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('uuid')->unique();
             $table->foreignId('facility_id')->constrained()->cascadeOnDelete();
             $table->string('file_url');
-            $table->enum('status', ['pending','approved','rejected']);
+            $table->enum('status', ['pending', 'approved', 'rejected']);
             $table->string('document_type');
             $table->timestamps();
         });

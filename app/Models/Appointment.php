@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AppointmentStatus;
+use App\Traits\Auditable;
 use Carbon\Carbon;
 use Database\Factories\AppointmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -30,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Appointment extends Model
 {
     /** @use HasFactory<AppointmentFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasUuids;
 

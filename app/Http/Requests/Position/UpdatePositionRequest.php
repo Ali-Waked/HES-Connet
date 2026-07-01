@@ -22,8 +22,8 @@ class UpdatePositionRequest extends FormRequest
      */
     public function rules(): array
     {
-          return [
-            'name' => ['sometimes','required', 'array'],
+        return [
+            'name' => ['sometimes', 'required', 'array'],
             'name.en' => ['required_with:name', 'string', 'max:255'],
             'name.ar' => ['required_with:name', 'string', 'max:255'],
 

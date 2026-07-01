@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ArticleStatus;
+use App\Observers\ArticleObserver;
+use App\Traits\Auditable;
 use Database\Factories\ArticleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,12 +33,14 @@ use Spatie\Translatable\HasTranslations;
     'views',
     'published_at',
     'meta',
+    'slug',
 ])]
 #[Translatable(['title', 'content'])]
+#[ObservedBy(ArticleObserver::class)]
 class Article extends Model
 {
     /** @use HasFactory<ArticleFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasTranslations, HasUuids;
 

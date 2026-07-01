@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -14,11 +14,11 @@ return new class extends Migration
         });
 
         DB::table('stories')->get()->each(function ($item) {
-            if ($item->content && !str_starts_with($item->content, '{')) {
+            if ($item->content && ! str_starts_with($item->content, '{')) {
                 DB::table('stories')
                     ->where('id', $item->id)
                     ->update([
-                        'content' => json_encode(['en' => $item->content, 'ar' => $item->content])
+                        'content' => json_encode(['en' => $item->content, 'ar' => $item->content]),
                     ]);
             }
         });

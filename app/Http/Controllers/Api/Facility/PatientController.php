@@ -22,7 +22,7 @@ class PatientController extends Controller
         }
 
         // Base permission check
-        $isOwner = $facilityStaff->role->slug === 'facility_owner';
+        // $isOwner = $facilityStaff->role->slug === 'facility_admin';
 
         // Base query depending on context
         $query = Patient::query()
@@ -39,7 +39,7 @@ class PatientController extends Controller
          * CONTEXT RULES
          * =========================
          */
-        if (! $isOwner) {
+        if (! $facilityStaff->is_owner) {
             // Doctor / Staff → only their patients
             $query->whereHas('appointments', function ($q) use ($facilityStaff) {
                 $q->where('facility_staff_id', $facilityStaff->id);
@@ -63,7 +63,7 @@ class PatientController extends Controller
         }
 
         // Staff filter (ONLY for owner or permissioned users)
-        if ($isOwner && $request->filled('facility_staff_id')) {
+        if ($facilityStaff->is_owner && $request->filled('facility_staff_id')) {
             $query->whereHas('appointments', function ($q) use ($request) {
                 $q->where('facility_staff_id', $request->facility_staff_id);
             });

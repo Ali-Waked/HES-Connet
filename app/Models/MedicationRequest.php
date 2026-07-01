@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\MedicationRequestStatus;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['patient_id', 'facility_id', 'prescription_id', 'pharmacist_id', 'status', 'notes', 'dispensed_at'])]
 class MedicationRequest extends Model
 {
+    use Auditable;
+
     use HasUuids;
 
     public function uniqueIds(): array

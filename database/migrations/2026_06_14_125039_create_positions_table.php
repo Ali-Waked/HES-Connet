@@ -9,22 +9,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
-{
-    Schema::create('positions', function (Blueprint $table) {
-        $table->id();
-        $table->uuid('uuid')->unique();
+    public function up(): void
+    {
+        Schema::create('positions', function (Blueprint $table) {
+            $table->id();
+            $table->uuid('uuid')->unique();
 
-        $table->json('name');
-        $table->json('description')->nullable();
+            $table->json('name');
+            $table->json('description')->nullable();
 
-        $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true);
 
-        $table->timestamps();
+            $table->timestamps();
 
-        $table->index('is_active');
-    });
-}
+            $table->index('is_active');
+        });
+    }
 
     /**
      * Reverse the migrations.

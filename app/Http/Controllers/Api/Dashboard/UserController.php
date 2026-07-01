@@ -14,19 +14,19 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class UserController extends Controller
 {
     public function __construct(
         private readonly UserService $user_service,
         private readonly GetUserStats $getUserStats,
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return AnonymousResourceCollection
      */
     public function index()
     {
@@ -94,7 +94,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function select(): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    public function select(): AnonymousResourceCollection
     {
         $query = User::query()->select(['id', 'uuid', 'name', 'email']);
 

@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\FacilityApprovalStatus;
 use App\Enums\FacilityStatus;
 use App\Enums\FacilityType;
+use App\Traits\Auditable;
 use Database\Factories\FacilityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,7 +52,7 @@ use Spatie\Translatable\HasTranslations;
 class Facility extends Model
 {
     /** @use HasFactory<FacilityFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasTranslations, HasUuids;
 
@@ -124,7 +125,7 @@ class Facility extends Model
 
     public function facilityStaff(): HasMany
     {
-        return $this->hasMany(FacilityStaff::class, 'staff_id');
+        return $this->hasMany(FacilityStaff::class, 'facility_id');
     }
 
     public function appointments(): HasManyThrough

@@ -108,7 +108,7 @@ class AdminDashboardAnalyticsTest extends TestCase
         int $facilityId,
         int $prescriptionId,
         string $status,
-        string $createdAt = null
+        ?string $createdAt = null
     ): MedicationRequest {
         $data = [
             'patient_id' => $patientId,

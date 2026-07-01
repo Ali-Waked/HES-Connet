@@ -14,9 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class ScheduleService
 {
-    public function __construct(private readonly UuidResolver $uuid_resolver)
-    {
-    }
+    public function __construct(private readonly UuidResolver $uuid_resolver) {}
 
     public function paginate(int $perPage = 15, ?string $facilityUuid = null): LengthAwarePaginator
     {
@@ -30,40 +28,41 @@ class ScheduleService
 
         return $query->latest()->paginate($perPage);
     }
- public function create(array $data): void
-{
-    $facilityStaff = $this->uuid_resolver->model(
-        FacilityStaff::class,
-        $data['facility_staff_uuid']
-    );
 
-    $rows = [];
-
-    foreach ($data['days_of_week'] as $day) {
-
-        $this->preventOverlap(
-            staffId: $facilityStaff->staff_id,
-            dayOfWeek: $day,
-            startTime: $data['start_time'],
-            endTime: $data['end_time'],
+    public function create(array $data): void
+    {
+        $facilityStaff = $this->uuid_resolver->model(
+            FacilityStaff::class,
+            $data['facility_staff_uuid']
         );
 
-        $rows[] = [
-            'facility_staff_id' => $facilityStaff->id,
-            'day_of_week' => $day,
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
-            'slot_duration' => $data['slot_duration'],
-            'is_active' => $data['is_active'] ?? true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
+        $rows = [];
+
+        foreach ($data['days_of_week'] as $day) {
+
+            $this->preventOverlap(
+                staffId: $facilityStaff->staff_id,
+                dayOfWeek: $day,
+                startTime: $data['start_time'],
+                endTime: $data['end_time'],
+            );
+
+            $rows[] = [
+                'facility_staff_id' => $facilityStaff->id,
+                'day_of_week' => $day,
+                'start_time' => $data['start_time'],
+                'end_time' => $data['end_time'],
+                'slot_duration' => $data['slot_duration'],
+                'is_active' => $data['is_active'] ?? true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        StaffSchedule::insert($rows);
     }
 
-    StaffSchedule::insert($rows);
-    }
-
-     public function show(StaffSchedule $schedule): StaffSchedule
+    public function show(StaffSchedule $schedule): StaffSchedule
     {
         return $schedule->load('facilityStaff.staff.user', 'facilityStaff.facility');
     }
@@ -135,7 +134,7 @@ class ScheduleService
             $days[] = [
                 'date' => $dateStr,
                 'day_of_week' => $dayOfWeek,
-                'is_available' => $daySchedules->isNotEmpty() && !$isUnavailable,
+                'is_available' => $daySchedules->isNotEmpty() && ! $isUnavailable,
                 'is_today' => $date->isToday(),
                 'is_past' => $date->isPast(),
                 'slots' => $daySchedules->map(fn ($s) => [
@@ -164,18 +163,18 @@ class ScheduleService
         string $endTime,
         ?int $excludeScheduleId = null,
     ): void {
-       $overlap = StaffSchedule::query()
-    ->whereHas('facilityStaff', function ($q) use ($staffId) {
-        $q->where('staff_id', $staffId);
-    })
-    ->where('day_of_week', $dayOfWeek)
-    ->where('start_time', '<', $endTime)
-    ->where('end_time', '>', $startTime)
-    ->when(
-        $excludeScheduleId,
-        fn ($q) => $q->where('id', '!=', $excludeScheduleId)
-    )
-    ->exists();
+        $overlap = StaffSchedule::query()
+            ->whereHas('facilityStaff', function ($q) use ($staffId) {
+                $q->where('staff_id', $staffId);
+            })
+            ->where('day_of_week', $dayOfWeek)
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime)
+            ->when(
+                $excludeScheduleId,
+                fn ($q) => $q->where('id', '!=', $excludeScheduleId)
+            )
+            ->exists();
 
         if ($overlap) {
             throw ValidationException::withMessages([

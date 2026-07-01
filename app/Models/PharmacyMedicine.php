@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Database\Factories\PharmacyMedicineFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PharmacyMedicine extends Model
 {
     /** @use HasFactory<PharmacyMedicineFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasUuids;
 

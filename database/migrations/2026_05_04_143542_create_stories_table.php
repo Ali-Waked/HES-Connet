@@ -16,10 +16,10 @@ return new class extends Migration
             $table->uuid()->unique();
             $table->foreignId('patient_id')->constrained();
             $table->text('content');
-            $table->enum('status', ['pending','approved','rejected']);
+            $table->enum('status', ['pending', 'approved', 'rejected']);
             $table->boolean('is_fundraising')->default(false);
-            $table->decimal('target_amount',10,2)->nullable();
-            $table->decimal('collected_amount',10,2)->default(0);
+            $table->decimal('target_amount', 10, 2)->nullable();
+            $table->decimal('collected_amount', 10, 2)->default(0);
             $table->timestamps();
         });
     }

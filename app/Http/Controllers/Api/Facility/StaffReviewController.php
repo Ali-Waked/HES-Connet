@@ -8,12 +8,19 @@ use App\Models\Review;
 use App\Models\ReviewReply;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class StaffReviewController extends Controller
 {
     public function index(Request $request)
     {
         $staff = auth()->user()->staff;
+
+        if (! $staff) {
+            return response()->json(StaffReviewResource::collection(
+                new LengthAwarePaginator([], 0, $request->integer('per_page', 15))
+            ));
+        }
 
         $reviews = Review::query()
             ->where('staff_id', $staff->id)

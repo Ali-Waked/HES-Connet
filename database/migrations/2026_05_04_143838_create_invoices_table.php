@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('appointment_id')->constrained();
-            $table->decimal('amount',10,2);
-            $table->enum('status',['paid','unpaid']);
+            $table->decimal('amount', 10, 2);
+            $table->enum('status', ['paid', 'unpaid']);
             $table->timestamps();
         });
     }

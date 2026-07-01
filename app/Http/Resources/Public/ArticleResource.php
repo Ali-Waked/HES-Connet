@@ -26,6 +26,7 @@ class ArticleResource extends JsonResource
             ]),
             'category' => new CategoryResource($this->whenLoaded('category')),
             'tags' => TagResource::collection($this->whenLoaded('tags')),
+            'is_favorited' => $this->when($request->user(), fn () => $request->user()->hasFavorited($this->resource), false),
         ];
     }
 }

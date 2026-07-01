@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->string('file_url');
-            $table->string('type'); 
+            $table->string('type');
             $table->timestamps();
         });
     }

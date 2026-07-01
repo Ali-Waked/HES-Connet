@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('rating');
             $table->text('comment')->nullable();
             $table->boolean('is_featured')->default(false);
-            $table->enum('status',['pending','approved','rejected'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->unique('user_id');
             $table->timestamps();
         });

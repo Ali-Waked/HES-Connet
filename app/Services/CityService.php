@@ -20,7 +20,7 @@ class CityService
                 $search,
                 fn ($query) => $query->where(function ($q) use ($search) {
                     $q->where('name->en', 'like', "%{$search}%")
-                      ->orWhere('name->ar', 'like', "%{$search}%");
+                        ->orWhere('name->ar', 'like', "%{$search}%");
                 })
             )
             ->when(

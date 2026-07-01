@@ -16,6 +16,8 @@ class StoreArticleRequest extends FormRequest
 
     public function rules(): array
     {
+        info($this->all());
+
         return [
             'title' => ['required', 'array'],
             'title.en' => ['required', 'string', 'max:255'],
@@ -25,7 +27,7 @@ class StoreArticleRequest extends FormRequest
             'content.en' => ['required', 'string'],
             'content.ar' => ['required', 'string'],
 
-            'category_id' => ['required', 'uuid', 'exists:categories,uuid'],
+            'category_id' => ['required', 'uuid', Rule::exists('categories', 'uuid')->where('type', 'article')],
 
             'status' => ['nullable', Rule::in(['draft', 'pending_review'])],
 

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\LocaleType;
 use App\Enums\Provider;
+use App\Traits\Auditable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -48,7 +49,7 @@ use Spatie\Translatable\HasTranslations;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasUuids, Notifiable, SoftDeletes;
+    use Auditable, HasApiTokens, HasFactory, HasUuids, Notifiable, SoftDeletes;
 
     use HasTranslations;
 

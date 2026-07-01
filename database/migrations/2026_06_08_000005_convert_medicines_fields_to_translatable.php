@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -16,14 +16,14 @@ return new class extends Migration
 
         DB::table('medicines')->get()->each(function ($item) {
             $update = [];
-            if ($item->name && !str_starts_with($item->name, '{')) {
+            if ($item->name && ! str_starts_with($item->name, '{')) {
                 $update['name'] = json_encode(['en' => $item->name, 'ar' => $item->name]);
             }
-            if ($item->description && !str_starts_with($item->description, '{')) {
+            if ($item->description && ! str_starts_with($item->description, '{')) {
                 $update['description'] = json_encode(['en' => $item->description, 'ar' => $item->description]);
             }
-            
-            if (!empty($update)) {
+
+            if (! empty($update)) {
                 DB::table('medicines')->where('id', $item->id)->update($update);
             }
         });

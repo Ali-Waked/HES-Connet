@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,8 @@ use Spatie\Translatable\HasTranslations;
 #[Translatable(['name', 'description'])]
 class Position extends Model
 {
+    use Auditable;
+
     use HasTranslations, HasUuids;
 
     protected function casts(): array

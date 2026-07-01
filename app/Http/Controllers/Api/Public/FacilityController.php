@@ -16,14 +16,22 @@ class FacilityController extends Controller
     {
         $facilities = Facility::query()
             ->with(['organization', 'headStaff', 'facilityImages'])
-            ->withCount(['facilityStaff as doctors_count', 'departments as departments_count'])
+            ->addSelect([
+                'doctors_count' => fn ($q) => $q->from('facility_staff')
+                    ->whereColumn('facility_id', 'facilities.id')
+                    ->selectRaw('COUNT(*)'),
+                'departments_count' => fn ($q) => $q->from('facility_staff')
+                    ->whereColumn('facility_id', 'facilities.id')
+                    ->whereNotNull('department_id')
+                    ->selectRaw('COUNT(DISTINCT department_id)'),
+            ])
             ->when(
                 $request->search,
                 fn ($query, $search) => $query->where(function ($q) use ($search) {
                     $q->where('name->en', 'like', "%{$search}%")
-                      ->orWhere('name->ar', 'like', "%{$search}%")
-                      ->orWhere('description->en', 'like', "%{$search}%")
-                      ->orWhere('description->ar', 'like', "%{$search}%");
+                        ->orWhere('name->ar', 'like', "%{$search}%")
+                        ->orWhere('description->en', 'like', "%{$search}%")
+                        ->orWhere('description->ar', 'like', "%{$search}%");
                 })
             )
             ->when(
@@ -45,7 +53,11 @@ class FacilityController extends Controller
             'facilityDocuments',
             'departments',
             'facilityStaff.staff.user',
+            'publicReviews.patient.user',
         ]);
+
+        $facility->loadCount(['publicReviews as reviews_count']);
+        $facility->loadAggregate(['publicReviews as average_rating'], 'rating', 'avg');
 
         return new ShowFacilityResource($facility);
     }

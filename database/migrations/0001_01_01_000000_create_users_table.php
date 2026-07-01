@@ -30,6 +30,7 @@ return new class extends Migration
             $table->foreignId('city_id')->nullable();
             $table->foreignId('active_workspace_id')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

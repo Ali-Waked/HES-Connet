@@ -18,7 +18,6 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        info($this->all());
 
         return [
             'name' => ['required', 'array'],

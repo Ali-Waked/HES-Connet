@@ -19,7 +19,7 @@ class PermissionSeeder extends Seeder
                 Permission::updateOrCreate(
                     ['key' => $permission['key']],
                     [
-                        'uuid'=> Str::uuid(),
+                        'uuid' => Str::uuid(),
                         'name' => $permission['name'],
                         'description' => $permission['description'],
                     ]

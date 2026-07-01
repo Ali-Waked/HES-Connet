@@ -10,9 +10,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class StaffUnavailabilityService
 {
-    public function __construct(private readonly UuidResolver $uuid_resolver)
-    {
-    }
+    public function __construct(private readonly UuidResolver $uuid_resolver) {}
 
     public function paginate(int $perPage = 15, ?int $facilityStaffId = null): LengthAwarePaginator
     {

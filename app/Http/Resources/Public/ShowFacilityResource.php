@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Public;
 
+use App\Http\Resources\FacilityReviewResource;
 use App\Models\FacilityStaff;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -20,7 +21,9 @@ class ShowFacilityResource extends JsonResource
             'facility_type' => $this->facility_type?->value,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
-            'cover_image' => $this->cover_image ? Storage::disk('public')->url($this->cover_image) : null,
+            'cover_image' => $this->cover_image,
+            'average_rating' => $this->average_rating ? round((float) $this->average_rating, 1) : null,
+            'reviews_count' => (int) ($this->reviews_count ?? 0),
             'organization' => $this->whenLoaded('organization', fn () => [
                 'uuid' => $this->organization->uuid,
                 'name' => $this->organization->getTranslations('name'),
@@ -33,7 +36,7 @@ class ShowFacilityResource extends JsonResource
             ]),
             'images' => $this->whenLoaded('facilityImages', fn () => $this->facilityImages->map(fn ($image) => [
                 'id' => $image->id,
-                'image_url' => $image->image_url ? Storage::disk('public')->url($image->image_url) : null,
+                'image_url' => $image->image_url,
             ])),
             'files' => $this->whenLoaded('facilityDocuments', fn () => $this->facilityDocuments->map(fn ($file) => [
                 'id' => $file->id,
@@ -47,6 +50,8 @@ class ShowFacilityResource extends JsonResource
                 'specialization' => $fs->staff->getTranslations('specialization'),
                 'position' => $fs->position,
             ])),
+            'reviews' => FacilityReviewResource::collection($this->whenLoaded('publicReviews')),
+            'is_favorited' => $this->when($request->user(), fn () => $request->user()->hasFavorited($this->resource), false),
         ];
     }
 }

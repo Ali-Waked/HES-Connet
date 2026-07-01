@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('medication_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('patient_id')->constrained();
-            $table->foreignId('facility_id')->constrained(); 
+            $table->foreignId('facility_id')->constrained();
             $table->foreignId('prescription_id')->constrained();
-            $table->enum('status', ['pending','approved','rejected']);
+            $table->enum('status', ['pending', 'approved', 'rejected']);
             $table->timestamps();
         });
     }

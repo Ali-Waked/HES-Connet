@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Database\Factories\FacilityReviewFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class FacilityReview extends Model
 {
     /** @use HasFactory<FacilityReviewFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected function casts(): array
     {

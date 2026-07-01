@@ -11,20 +11,17 @@ use App\Http\Resources\FacilityResource;
 use App\Models\Facility;
 use App\Services\FacilityService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Log;
 
 class FacilityController extends Controller
 {
-    public function __construct(private readonly FacilityService $facility_service)
-    {
-    }
+    public function __construct(private readonly FacilityService $facility_service) {}
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return AnonymousResourceCollection
      */
     public function index(): JsonResource
     {
@@ -43,6 +40,7 @@ class FacilityController extends Controller
     public function store(StoreFacilityRequest $request): Facility
     {
         $facility = $this->facility_service->create($request->validated());
+
         return $facility;
     }
 
@@ -72,6 +70,7 @@ class FacilityController extends Controller
     public function edit(Facility $facility): JsonResponse
     {
         $facility = $this->facility_service->show($facility);
+
         return response()->json([
             'data' => [
                 'id' => $facility->id,
@@ -85,14 +84,14 @@ class FacilityController extends Controller
                 'name' => $facility->getTranslations('name'),
                 'description' => $facility->getTranslations('description'),
                 'owner' => $facility->owner,
-                'cover_image'=> $facility->cover_image,
+                'cover_image' => $facility->cover_image,
                 'images' => $facility->facilityImages,
                 'files' => $facility->facilityDocuments,
-                'is_featured'=> $facility->is_featured,
-                 'city' => $facility->city ? [
-    'uuid' => $facility->city->uuid,
-    'name' => $facility->city->getTranslations('name'),
-] : null,
+                'is_featured' => $facility->is_featured,
+                'city' => $facility->city ? [
+                    'uuid' => $facility->city->uuid,
+                    'name' => $facility->city->getTranslations('name'),
+                ] : null,
             ],
         ]);
     }
@@ -125,7 +124,7 @@ class FacilityController extends Controller
         ]);
     }
 
-    public function stats():JsonResponse
+    public function stats(): JsonResponse
     {
         return response()->json(
             $this->facility_service->getStats()

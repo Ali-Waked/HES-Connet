@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\PlatformReviewStatus;
+use App\Traits\Auditable;
 use Database\Factories\PlatformReviewFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,13 +18,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PlatformReview extends Model
 {
     /** @use HasFactory<PlatformReviewFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected function casts(): array
     {
         return [
             'is_featured' => 'boolean',
             'replied_at' => 'datetime',
+            'status' => PlatformReviewStatus::class,
         ];
     }
 
@@ -43,7 +46,7 @@ class PlatformReview extends Model
 
     public function scopeApproved(Builder $query): Builder
     {
-        return $query->where('status', 'published');
+        return $query->where('status', PlatformReviewStatus::APPROVED);
     }
 
     public function scopePending(Builder $query): Builder

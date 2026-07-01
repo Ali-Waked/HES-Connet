@@ -7,7 +7,6 @@ namespace App\Services;
 use App\Models\Facility;
 use App\Models\MedicationRequest;
 use App\Models\Medicine;
-use App\Models\PrescriptionItem;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\GenderType;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,8 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable(['user_id', 'phone', 'gender', 'birth_date', 'address', 'profile_image', 'cover_image'])]
 class UserProfiles extends Model
 {
+    use Auditable;
+
     protected function casts(): array
     {
         return [

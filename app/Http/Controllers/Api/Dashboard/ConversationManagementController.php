@@ -21,8 +21,7 @@ class ConversationManagementController extends Controller
         private readonly ConversationStatsAction $statsAction,
         private readonly ArchiveConversationAction $archiveAction,
         private readonly LockConversationAction $lockAction,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {

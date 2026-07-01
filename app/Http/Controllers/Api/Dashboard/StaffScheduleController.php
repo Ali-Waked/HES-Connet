@@ -14,9 +14,7 @@ use Illuminate\Http\JsonResponse;
 
 class StaffScheduleController extends Controller
 {
-    public function __construct(private readonly StaffScheduleService $staff_schedule_service)
-    {
-    }
+    public function __construct(private readonly StaffScheduleService $staff_schedule_service) {}
 
     public function index()
     {

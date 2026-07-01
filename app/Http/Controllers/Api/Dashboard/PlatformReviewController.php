@@ -10,6 +10,7 @@ use App\Http\Resources\PlatformReviewResource;
 use App\Models\PlatformReview;
 use App\Services\PlatformReviewService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PlatformReviewController extends Controller
 {
@@ -34,6 +35,24 @@ class PlatformReviewController extends Controller
         return new PlatformReviewResource(
             $this->platform_review_service->show($platformReview)
         );
+    }
+
+    public function reply(Request $request, PlatformReview $platformReview): JsonResponse
+    {
+        $validated = $request->validate([
+            'reply' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $review = $this->platform_review_service->reply(
+            $platformReview,
+            $validated['reply'],
+            $request->user()
+        );
+
+        return response()->json([
+            'message' => __('Reply sent successfully.'),
+            'data' => new PlatformReviewResource($review),
+        ]);
     }
 
     public function update(AdminUpdatePlatformReviewRequest $request, PlatformReview $platformReview): JsonResponse

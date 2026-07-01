@@ -16,6 +16,12 @@ class HomeController extends Controller
 
     public function __invoke(): HomeResource
     {
+        info('hi');
+        // info( new HomeResource(
+        //     $this->homeService->getHomeData()
+        // )->toArray());
+        info($this->homeService->getHomeData());
+
         return new HomeResource(
             $this->homeService->getHomeData()
         );

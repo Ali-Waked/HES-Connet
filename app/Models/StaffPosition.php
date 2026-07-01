@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Database\Factories\StaffPositionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,7 +20,7 @@ use Spatie\Translatable\HasTranslations;
 class StaffPosition extends Model
 {
     /** @use HasFactory<StaffPositionFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasTranslations, HasUuids;
 

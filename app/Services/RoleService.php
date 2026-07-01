@@ -4,18 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Role;
-    use Illuminate\Support\Facades\DB;
 use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class RoleService
 {
-    public function __construct(private readonly UuidResolver $uuid_resolver)
-    {
-    }
+    public function __construct(private readonly UuidResolver $uuid_resolver) {}
 
-    public function paginate(int $perPage = 15, ?string $search): LengthAwarePaginator
+    public function paginate(int $perPage, ?string $search): LengthAwarePaginator
     {
         return Role::query()
             ->with('permissions')
@@ -23,8 +21,8 @@ class RoleService
                 $search,
                 fn ($query) => $query->where(function ($q) use ($search) {
                     $q->where('name->en', 'like', "%{$search}%")
-                      ->orWhere('name->ar', 'like', "%{$search}%")
-                      ->orWhere('slug', 'like', "%{$search}%");
+                        ->orWhere('name->ar', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%");
                 })
             )
             ->latest()
@@ -37,11 +35,12 @@ class RoleService
 
         if (isset($data['permissions'])) {
             $permissions = [];
-            foreach($data['permissions'] as $perm)
-            $permissions[] = $this->uuid_resolver->resolve(
-            Permission::class,
-            $perm
-        );
+            foreach ($data['permissions'] as $perm) {
+                $permissions[] = $this->uuid_resolver->resolve(
+                    Permission::class,
+                    $perm
+                );
+            }
             $role->permissions()->sync($permissions);
         }
 
@@ -57,8 +56,7 @@ class RoleService
     {
         $role->update($data);
 
-            
-       if (isset($data['permissions'])) {
+        if (isset($data['permissions'])) {
             $permissionIds = collect($data['permissions'])
                 ->map(fn ($uuid) => $this->uuid_resolver->resolve(
                     Permission::class,
@@ -68,6 +66,7 @@ class RoleService
 
             $role->permissions()->sync($permissionIds);
         }
+
         return $role->refresh()->load('permissions');
     }
 
@@ -76,17 +75,16 @@ class RoleService
         $role->delete();
     }
 
+    public function getStats(): array
+    {
+        return [
+            'total_roles' => Role::count(),
 
-public function getStats(): array
-{
-    return [
-        'total_roles' => Role::count(),
+            'assigned_roles' => Role::has('users')->count(),
 
-        'assigned_roles' => Role::has('users')->count(),
+            'unassigned_roles' => Role::doesntHave('users')->count(),
 
-        'unassigned_roles' => Role::doesntHave('users')->count(),
-
-        'total_permission_assignments' => DB::table('role_permission')->count(),
-    ];
-}
+            'total_permission_assignments' => DB::table('role_permission')->count(),
+        ];
+    }
 }

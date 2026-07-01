@@ -35,6 +35,7 @@ class ShowDoctorResource extends JsonResource
                 'name' => $facility->getTranslations('name'),
                 'facility_type' => $facility->facility_type?->value,
             ])),
+            'is_favorited' => $this->when($request->user(), fn () => $request->user()->hasFavorited($this->resource), false),
         ];
     }
 }

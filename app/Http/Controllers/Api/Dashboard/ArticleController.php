@@ -22,11 +22,14 @@ class ArticleController extends Controller
     {
         return ArticleResource::collection(
             $this->article_service->paginate(
-                (int) request('per_page', 15),
-                request('search'),
-                request('status'),
-                request('category_id'),
-                request('author_id'),
+                perPage: (int) request('per_page', 15),
+                search: request('search'),
+                status: request('status'),
+                categoryId: request('category_id'),
+                authorId: request('author_id'),
+                createdFrom: request('created_from'),
+                createdTo: request('created_to'),
+                sortBy: request('sort_by', 'latest'),
             )
         );
     }

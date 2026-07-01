@@ -384,7 +384,7 @@ class MedicineTest extends TestCase
         $user = $this->createUserWithRole('super_admin', []);
 
         $response = $this->actingAs($user, 'web')
-            ->getJson('/api/medicines/' . Str::uuid());
+            ->getJson('/api/medicines/'.Str::uuid());
 
         $response->assertNotFound();
     }

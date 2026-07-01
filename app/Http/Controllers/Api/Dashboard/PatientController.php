@@ -11,17 +11,16 @@ use App\Http\Resources\PatientResource;
 use App\Models\Patient;
 use App\Services\PatientService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PatientController extends Controller
 {
-    public function __construct(private readonly PatientService $patient_service)
-    {
-    }
+    public function __construct(private readonly PatientService $patient_service) {}
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return AnonymousResourceCollection
      */
     public function index()
     {

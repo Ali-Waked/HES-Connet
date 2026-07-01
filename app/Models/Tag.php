@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Database\Factories\TagFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -18,7 +19,7 @@ use Spatie\Translatable\HasTranslations;
 class Tag extends Model
 {
     /** @use HasFactory<TagFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasTranslations, HasUuids;
 

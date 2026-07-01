@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Database\Factories\FacilityStaffFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,11 +31,17 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 class FacilityStaff extends Pivot
 {
     /** @use HasFactory<FacilityStaffFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasUuids;
 
     protected $table = 'facility_staff';
+
+    private const ADMIN_ROLES = [
+        'facility_admin',
+        'clinic_admin',
+        'hospital_admin',
+    ];
 
     public function uniqueIds(): array
     {
@@ -147,5 +155,10 @@ class FacilityStaff extends Pivot
         }
 
         return $override->enabled;
+    }
+
+    protected function isOwner(): Attribute
+    {
+        return Attribute::make(get: fn () => in_array($this->role->slug, self::ADMIN_ROLES, true));
     }
 }

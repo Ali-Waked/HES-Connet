@@ -19,8 +19,8 @@ class PageService
                 $search,
                 fn ($query) => $query->where(function ($q) use ($search) {
                     $q->where('title->en', 'like', "%{$search}%")
-                      ->orWhere('title->ar', 'like', "%{$search}%")
-                      ->orWhere('slug', 'like', "%{$search}%");
+                        ->orWhere('title->ar', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%");
                 })
             )
             ->when(

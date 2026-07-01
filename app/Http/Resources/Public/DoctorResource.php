@@ -28,6 +28,7 @@ class DoctorResource extends JsonResource
                 'name' => $this->facilities->first()->getTranslations('name'),
                 'facility_type' => $this->facilities->first()->facility_type?->value,
             ] : null),
+            'is_favorited' => $this->when($request->user(), fn () => $request->user()->hasFavorited($this->resource), false),
         ];
     }
 }

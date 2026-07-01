@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Category;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Enums\CategoriesType;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
 
 class UpdateCategoryRequest extends FormRequest
 {
@@ -24,7 +26,7 @@ class UpdateCategoryRequest extends FormRequest
             'description.en' => ['nullable', 'string'],
             'description.ar' => ['nullable', 'string'],
 
-            'type' => ['sometimes', 'required', Rule::in(['article', 'story', 'job'])],
+            'type' => ['sometimes', 'required', new Enum(CategoriesType::class)],
 
             'is_active' => ['sometimes', 'required', 'boolean'],
         ];

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\PrescriptionCreated;
 use App\Models\Appointment;
 use App\Models\Facility;
 use App\Models\Medicine;
@@ -25,13 +26,14 @@ class PrescriptionService
             ->facilityStaff()
             ->where('facility_id', $facility->id)
             ->firstOrFail();
+        $isOwner = $facilityStaff->role->slug === 'facility_admin';
 
         return Prescription::query()
             ->whereHas(
                 'appointment.facilityStaff',
                 fn ($q) => $q
                     ->where('facility_id', $facility->id)
-                    ->where('staff_id', $staff->id)
+                    ->when(! $isOwner, fn ($que) => $que->where('staff_id', $staff->id))
             )
 
             ->when(
@@ -73,6 +75,8 @@ class PrescriptionService
                 'appointment_id' => $appointmentId,
                 'notes' => $data['notes'] ?? null,
             ]);
+
+            event(new PrescriptionCreated($prescription));
 
             $prescription->items()->createMany(
                 collect($data['medicines'])

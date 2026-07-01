@@ -17,7 +17,6 @@ class StorePrescriptionRequest extends FormRequest
 
     public function rules(): array
     {
-        info($this->all());
 
         return [
             'appointment_id' => ['required', 'exists:appointments,uuid'],

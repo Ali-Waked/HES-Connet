@@ -10,7 +10,6 @@ use App\Http\Requests\Staff\UpdateScheduleRequest;
 use App\Http\Resources\Staff\ScheduleResource;
 use App\Models\Facility;
 use App\Models\FacilityStaff;
-use App\Models\Staff;
 use App\Models\StaffSchedule;
 use App\Services\ScheduleService;
 use App\Services\UuidResolver;
@@ -84,7 +83,7 @@ class ScheduleController extends Controller
         $validated = $request->validated();
 
         if (isset($validated['facility_id'])) {
-        $facilityId = $this->uuid_resolver->resolve(Facility::class, $validated['facility_id']);
+            $facilityId = $this->uuid_resolver->resolve(Facility::class, $validated['facility_id']);
             $newFacilityStaff = FacilityStaff::query()
                 ->where('staff_id', $staff->id)
                 ->where('facility_id', $facilityId)

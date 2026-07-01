@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Article;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +14,6 @@ class UpdateArticleRequest extends FormRequest
 
     public function rules(): array
     {
-        info($this->all());
         return [
             'title' => ['sometimes', 'required', 'array'],
             'title.en' => ['sometimes', 'required', 'string', 'max:255'],
@@ -25,7 +23,7 @@ class UpdateArticleRequest extends FormRequest
             'content.en' => ['sometimes', 'required', 'string'],
             'content.ar' => ['sometimes', 'required', 'string'],
 
-            'category_id' => ['sometimes', 'required', 'uuid'],
+            'category_id' => ['sometimes', 'required', 'uuid', Rule::exists('categories', 'uuid')->where('type', 'article')],
             'author_id' => ['sometimes', 'required', 'uuid'],
 
             'status' => ['sometimes', 'required', Rule::in(['draft', 'pending_review', 'published', 'archived', 'rejected'])],
@@ -34,9 +32,6 @@ class UpdateArticleRequest extends FormRequest
             'tags.*' => ['uuid'],
 
             'cover_image' => ['nullable', 'image', 'max:5120'],
-
-            'gallery_images' => ['nullable', 'array'],
-            'gallery_images.*' => ['image', 'max:5120'],
         ];
     }
 }

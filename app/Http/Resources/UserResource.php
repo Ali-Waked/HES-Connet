@@ -20,6 +20,15 @@ class UserResource extends JsonResource
             'avatar' => $this->avatar,
             'cover_image' => $this->cover_image,
             'last_seen_at' => $this->last_seen_at,
+            'gender' => $this->profile?->gender,
+            'birth_date' => $this->profile?->birth_date,
+            'phone' => $this->profile?->phone,
+            'address' => $this->profile?->address,
+            'locale' => $this->locale, // en, ar
+            'is_active' => $this->is_active,
+            'is_verified' => $this->email_verified_at !== null,
+            'has_password' => ! is_null($this->password),
+            'auth_type' => $this->provider ? 'oauth' : 'email',
 
             'system_roles' => $this->whenLoaded(
                 'systemRoles',
@@ -39,13 +48,16 @@ class UserResource extends JsonResource
                 'staff',
                 fn () => $this->getAvailableWorkspaces()
             ),
+            'active_workspace_permissions' => $this->whenLoaded(
+                'staff',
+                fn () => $this->getActiveWorkspacePermissions()
+            ),
 
             'dashboard_route' => $this->dashboard_route,
 
             'profile' => new UserProfilesResource(
                 $this->whenLoaded('profile')
             ),
-
             'city' => new CityResource(
                 $this->whenLoaded('city')
             ),

@@ -10,7 +10,6 @@ use App\Http\Requests\Staff\UpdateUnavailabilityRequest;
 use App\Http\Resources\Staff\UnavailabilityResource;
 use App\Models\Facility;
 use App\Models\FacilityStaff;
-use App\Models\Staff;
 use App\Models\StaffUnavailability;
 use App\Services\StaffUnavailabilityService;
 use App\Services\UuidResolver;
@@ -26,7 +25,7 @@ class UnavailabilityController extends Controller
 
     public function index(Request $request, string $staff): JsonResponse
     {
-        info([$staff,'019ed9e2-6f98-7230-8c83-ba15c3dc223a']);
+        info([$staff, '019ed9e2-6f98-7230-8c83-ba15c3dc223a']);
         $facilityStaffQuery = FacilityStaff::where('staff_id', $staff->id);
 
         if ($facilityUuid = $request->query('facility_id')) {
@@ -59,7 +58,7 @@ class UnavailabilityController extends Controller
             ->where('facility_id', $facilityId)
             ->active()
             ->firstOrFail();
-        $validated['facility_staff_id']= $facilityStaff->id;
+        $validated['facility_staff_id'] = $facilityStaff->id;
         // $validated['facility_staff_uuid'] = $facilityStaff->uuid;
         // unset($validated['facility_id']);
 

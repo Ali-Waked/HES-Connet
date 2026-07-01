@@ -15,7 +15,6 @@ class StoreAppointmentRequest extends FormRequest
 
     public function rules(): array
     {
-        info($this->all());
 
         return [
             'facility_staff_uuid' => ['required', 'exists:facility_staff,uuid'],

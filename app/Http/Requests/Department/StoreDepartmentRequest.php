@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Department;
 
+use App\Models\Facility;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreDepartmentRequest extends FormRequest
 {
@@ -22,13 +24,14 @@ class StoreDepartmentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $facilityId = Facility::whereUuid($this->facility_id)->value('id');
+
         return [
-    
-            'name' => ['required','array'],
+            'name' => ['required', 'array'],
             'name.en' => ['required', 'string', 'max:255'],
             'name.ar' => ['required', 'string', 'max:255'],
-            
-            'description' => ['nullable','array'],
+
+            'description' => ['nullable', 'array'],
             'description.en' => ['nullable', 'string'],
             'description.ar' => ['nullable', 'string'],
 
@@ -37,13 +40,15 @@ class StoreDepartmentRequest extends FormRequest
                 'exists:facilities,uuid',
             ],
 
-            'head_id' => [
-                'nullable',
-                'exists:staff,uuid',
+            'head_facility_staff_id' => [
+                'required',
+                Rule::exists('facility_staff', 'uuid')
+                    ->where(fn ($query) => $query->where('facility_id', $facilityId)),
             ],
 
-            'is_active' => ['nullable','boolean'],
-            'image' => ['required','image']
+            'is_active' => ['nullable', 'boolean'],
+
+            'image' => ['required', 'image'],
         ];
     }
 }

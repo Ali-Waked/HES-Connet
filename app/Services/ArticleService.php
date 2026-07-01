@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\ArticleCreated;
 use App\Models\Article;
-use App\Models\ArticleImage;
 use App\Models\Category;
 use App\Models\Staff;
 use App\Models\Tag;
@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ArticleService
 {
-    public function __construct(private readonly UuidResolver $uuid_resolver)
-    {
-    }
+    public function __construct(private readonly UuidResolver $uuid_resolver) {}
 
     public function paginate(
         int $perPage = 15,
@@ -25,19 +23,21 @@ class ArticleService
         ?string $status = null,
         ?string $categoryId = null,
         ?string $authorId = null,
+        ?string $createdFrom = null,
+        ?string $createdTo = null,
+        ?string $sortBy = 'latest',
     ): LengthAwarePaginator {
         return Article::query()
             ->with([
                 'category',
                 'author',
                 'tags',
-                'images',
             ])
             ->when(
                 $search,
                 fn ($query) => $query->where(function ($q) use ($search) {
                     $q->where('title->en', 'like', "%{$search}%")
-                      ->orWhere('title->ar', 'like', "%{$search}%");
+                        ->orWhere('title->ar', 'like', "%{$search}%");
                 })
             )
             ->when(
@@ -54,184 +54,134 @@ class ArticleService
             ->when(
                 $authorId,
                 fn ($query) => $query->where(
-                    'auth_id',
+                    'author_id',
                     $this->uuid_resolver->resolve(Staff::class, $authorId)
                 )
             )
-            ->latest()
+            ->when($createdFrom, fn ($q) => $q->whereDate('created_at', '>=', $createdFrom))
+            ->when($createdTo, fn ($q) => $q->whereDate('created_at', '<=', $createdTo))
+            ->when($sortBy === 'oldest', fn ($q) => $q->oldest())
+            ->when($sortBy === 'most_viewed', fn ($q) => $q->orderBy('views', 'desc'), fn ($q) => $q->latest())
             ->paginate($perPage);
     }
 
     public function create(array $data): Article
     {
-    return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data) {
+            $tagIds = [];
 
-        $tagIds = [];
+            if (! empty($data['tags'])) {
+                $tagIds = array_map(
+                    fn (string $uuid) => $this->uuid_resolver->resolve(Tag::class, $uuid),
+                    $data['tags']
+                );
+            }
 
-        if (! empty($data['tags'])) {
-            $tagIds = array_map(
-                fn (string $uuid) => $this->uuid_resolver->resolve(Tag::class, $uuid),
-                $data['tags']
+            $data['category_id'] = $this->uuid_resolver->resolve(
+                Category::class,
+                $data['category_id']
             );
-        }
 
-        $data['category_id'] = $this->uuid_resolver->resolve(
-            Category::class,
-            $data['category_id']
-        );
+            $data['author_id'] = auth()->id();
 
-        $data['author_id'] = auth()->id();
+            if (! empty($data['cover_image'])) {
+                $data['cover_image'] = $data['cover_image']->store(
+                    'articles/cover',
+                    'public'
+                );
+            }
 
-        if (! empty($data['cover_image'])) {
-            $data['cover_image'] = $data['cover_image']->store(
-                'articles/cover',
-                'public'
+            unset(
+                $data['tags'],
             );
-        }
 
-        $galleryImages = $data['gallery_images'] ?? [];
+            $article = Article::create($data);
 
-        unset(
-            $data['tags'],
-            $data['images']
-        );
+            if (! empty($tagIds)) {
+                $article->tags()->sync($tagIds);
+            }
 
-        $article = Article::create($data);
+            event(new ArticleCreated($article));
 
-        if (! empty($tagIds)) {
-            $article->tags()->sync($tagIds);
-        }
-
-        foreach ($galleryImages as $image) {
-            $path = $image->store('articles/gallery', 'public');
-
-            $article->images()->create([
-                'image_url' => $path,
+            return $article->load([
+                'category',
+                'author',
+                'tags',
             ]);
-        }
-
-        return $article->load([
-            'category',
-            'author',
-            'tags',
-            'images',
-        ]);
-    });
+        });
     }
+
     public function show(Article $article): Article
     {
         return $article->load([
             'category',
             'author',
             'tags',
-            'images',
-        ]);
+            'comments.user.profile',
+        ])->loadCount('comments');
     }
 
     public function update(Article $article, array $data): Article
-{
-    return DB::transaction(function () use ($article, $data) {
+    {
+        return DB::transaction(function () use ($article, $data) {
+            unset($data['_method']);
 
-        unset($data['_method']);
-
-        if (! empty($data['category_id'])) {
-            $data['category_id'] = $this->uuid_resolver->resolve(
-                Category::class,
-                $data['category_id']
-            );
-        }
-
-        if (! empty($data['cover_image'])) {
-
-            if ($article->cover_image) {
-                Storage::disk('public')->delete(
-                    $article->getRawOriginal('cover_image')
+            if (! empty($data['category_id'])) {
+                $data['category_id'] = $this->uuid_resolver->resolve(
+                    Category::class,
+                    $data['category_id']
                 );
             }
 
-            $data['cover_image'] = $data['cover_image']->store(
-                'articles/cover',
-                'public'
-            );
-        }
+            if (! empty($data['cover_image'])) {
+                if ($article->cover_image) {
+                    Storage::disk('public')->delete(
+                        $article->getRawOriginal('cover_image')
+                    );
+                }
 
-        $tagIds = null;
-
-        if (! empty($data['tags'])) {
-            $tagIds = array_map(
-                fn (string $uuid) => $this->uuid_resolver->resolve(
-                    Tag::class,
-                    $uuid
-                ),
-                $data['tags']
-            );
-        }
-
-        $galleryImages = $data['gallery_images'] ?? [];
-
-        info('Gallery Images Count', [
-            'count' => count($galleryImages),
-        ]);
-
-        unset(
-            $data['tags'],
-            $data['gallery_images']
-        );
-
-        $article->update($data);
-
-        if ($tagIds !== null) {
-            $article->tags()->sync($tagIds);
-        }
-
-        if (count($galleryImages) > 0) {
-
-            foreach ($article->images as $existingImage) {
-
-                Storage::disk('public')->delete(
-                    $existingImage->getRawOriginal('image_url')
-                );
-
-                $existingImage->delete();
-            }
-
-            foreach ($galleryImages as $image) {
-
-                $path = $image->store(
-                    'articles/gallery',
+                $data['cover_image'] = $data['cover_image']->store(
+                    'articles/cover',
                     'public'
                 );
-
-                $article->images()->create([
-                    'image_url' => $path,
-                ]);
             }
-        }
 
-        return $article->fresh()->load([
-            'category',
-            'author',
-            'tags',
-            'images',
-        ]);
-    });
-}
+            $tagIds = null;
+
+            if (! empty($data['tags'])) {
+                $tagIds = array_map(
+                    fn (string $uuid) => $this->uuid_resolver->resolve(
+                        Tag::class,
+                        $uuid
+                    ),
+                    $data['tags']
+                );
+            }
+
+            unset(
+                $data['tags'],
+            );
+
+            $article->update($data);
+
+            if ($tagIds !== null) {
+                $article->tags()->sync($tagIds);
+            }
+
+            return $article->fresh()->load([
+                'category',
+                'author',
+                'tags',
+            ]);
+        });
+    }
+
     public function destroy(Article $article): void
     {
         DB::transaction(function () use ($article) {
-            $article->load('images');
-
             $originalCover = $article->getRawOriginal('cover_image');
             if ($originalCover) {
                 Storage::disk('public')->delete($originalCover);
-            }
-
-            foreach ($article->images as $image) {
-                $originalPath = $image->getRawOriginal('image_url');
-                if ($originalPath) {
-                    Storage::disk('public')->delete($originalPath);
-                }
-                $image->delete();
             }
 
             $article->tags()->detach();

@@ -15,10 +15,9 @@ class StoreScheduleRequest extends FormRequest
 
     public function rules(): array
     {
-        info($this->all());
         return [
             'facility_uuid' => ['required', 'exists:facilities,uuid'],
-            'days_of_week' => ['required','array'],
+            'days_of_week' => ['required', 'array'],
             'days_of_week.*' => ['required', 'integer', 'between:0,6'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],

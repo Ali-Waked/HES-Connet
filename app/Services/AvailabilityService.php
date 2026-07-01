@@ -11,12 +11,51 @@ use App\Models\Staff;
 use App\Models\StaffSchedule;
 use App\Models\StaffUnavailability;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
 
 class AvailabilityService
 {
-    public function __construct(private readonly UuidResolver $uuid_resolver)
+    public function __construct(private readonly UuidResolver $uuid_resolver) {}
+
+    public function getAvailableDays(Facility $facility, Staff $staff, int $daysAhead = 30): array
     {
+        $from = Carbon::today();
+        $to = Carbon::today()->addDays($daysAhead);
+
+        $facilityStaff = FacilityStaff::where('facility_id', $facility->id)
+            ->where('staff_id', $staff->id)
+            ->firstOrFail();
+
+        $schedules = $facilityStaff->schedules->keyBy('day_of_week');
+
+        $appointments = Appointment::where('facility_staff_id', $facilityStaff->id)
+            ->whereBetween('start_at', [$from, $to->copy()->endOfDay()])
+            ->get();
+
+        $unavailabilities = StaffUnavailability::where('facility_staff_id', $facilityStaff->id)
+            ->whereBetween('start_at', [$from, $to->copy()->endOfDay()])
+            ->get();
+
+        $days = [];
+
+        foreach (CarbonPeriod::create($from, $to) as $date) {
+            $schedule = $schedules[$date->dayOfWeek] ?? null;
+
+            if (! $schedule) {
+                continue;
+            }
+
+            if ($this->isDayFullyBlocked($date, $unavailabilities)) {
+                continue;
+            }
+
+            if ($this->hasAnyAvailableSlot($date, $schedule, $appointments, $unavailabilities)) {
+                $days[] = $date->toDateString();
+            }
+        }
+
+        return $days;
     }
 
     public function getAvailableSlots(Staff $staff, string $facilityUuid, string $date): array
@@ -88,8 +127,8 @@ class AvailabilityService
         $slots = [];
 
         foreach ($schedules as $schedule) {
-            $scheduleStart = Carbon::parse($date->format('Y-m-d') . ' ' . $schedule->start_time);
-            $scheduleEnd = Carbon::parse($date->format('Y-m-d') . ' ' . $schedule->end_time);
+            $scheduleStart = Carbon::parse($date->format('Y-m-d').' '.$schedule->start_time);
+            $scheduleEnd = Carbon::parse($date->format('Y-m-d').' '.$schedule->end_time);
             $duration = (int) $schedule->slot_duration;
 
             $current = $scheduleStart->copy();
@@ -114,6 +153,36 @@ class AvailabilityService
         }
 
         return $slots;
+    }
+
+    private function isDayFullyBlocked(Carbon $date, Collection $unavailabilities): bool
+    {
+        return $unavailabilities->contains(fn ($u) => $date->between(
+            Carbon::parse($u->start_at)->startOfDay(),
+            Carbon::parse($u->end_at)->endOfDay()
+        ));
+    }
+
+    private function hasAnyAvailableSlot(Carbon $date, StaffSchedule $schedule, Collection $appointments, Collection $unavailabilities): bool
+    {
+        $slotDuration = $schedule->slot_duration;
+        $start = Carbon::parse($date->toDateString().' '.$schedule->start_time);
+        $end = Carbon::parse($date->toDateString().' '.$schedule->end_time);
+
+        while ($start->copy()->addMinutes($slotDuration)->lte($end)) {
+            $slotEnd = $start->copy()->addMinutes($slotDuration);
+
+            $conflict = $appointments->contains(fn ($a) => $start < $a->end_at && $slotEnd > $a->start_at);
+            $blocked = $unavailabilities->contains(fn ($u) => $start < $u->end_at && $slotEnd > $u->start_at);
+
+            if (! $conflict && ! $blocked) {
+                return true;
+            }
+
+            $start->addMinutes($slotDuration);
+        }
+
+        return false;
     }
 
     private function isSlotAvailable(

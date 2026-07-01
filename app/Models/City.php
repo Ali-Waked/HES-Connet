@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Database\Factories\CityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -22,7 +23,7 @@ use Spatie\Translatable\HasTranslations;
 class City extends Model
 {
     /** @use HasFactory<CityFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     use HasTranslations, HasUuids;
 

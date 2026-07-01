@@ -12,6 +12,7 @@ use App\Models\Department;
 use App\Models\Facility;
 use App\Services\DepartmentService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class DepartmentController extends Controller
 {
@@ -22,7 +23,7 @@ class DepartmentController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return AnonymousResourceCollection
      */
     public function index()
     {
@@ -40,6 +41,7 @@ class DepartmentController extends Controller
      */
     public function store(StoreDepartmentRequest $request): JsonResponse
     {
+        info('hi');
         $department = $this->department_service->create(
             $request->validated()
         );
@@ -47,7 +49,7 @@ class DepartmentController extends Controller
         return response()->json([
             'message' => __('Department created successfully.'),
             'data' => new DepartmentResource(
-                $department->load(['facility', 'head'])
+                $department->load(['facilityStaff.facility', 'head'])
             ),
         ], 201);
     }
@@ -58,14 +60,15 @@ class DepartmentController extends Controller
     public function show(Department $department): JsonResponse
     {
         $department = $this->department_service->show($department);
+
         return response()->json([
-                'id' => $department->id,
-                'uuid' => $department->uuid,
-                'is_active' => $department->is_active,
-                'facility_id' => $department->facility->uuid,
-                'image' => $department->image,
-                'name' => $department->getTranslations('name'),
-                'description' => $department->getTranslations('description'),
+            'id' => $department->id,
+            'uuid' => $department->uuid,
+            'is_active' => $department->is_active,
+            'facility_id' => $department->facility->uuid,
+            'image' => $department->image,
+            'name' => $department->getTranslations('name'),
+            'description' => $department->getTranslations('description'),
         ]);
     }
 
@@ -99,7 +102,7 @@ class DepartmentController extends Controller
         ]);
     }
 
-    public function stats():JsonResponse
+    public function stats(): JsonResponse
     {
         return response()->json(
             $this->department_service->getStats()
@@ -107,15 +110,15 @@ class DepartmentController extends Controller
     }
 
     public function lookup()
-{
+    {
 
-    $facility = Facility::whereUuid(request()->facility_id)->firstOrFail();
+        $facility = Facility::whereUuid(request()->facility_id)->firstOrFail();
 
-    return DepartmentResource::collection(
-    $facility->departments()
-        ->where('is_active', true)
-        ->orderBy('name->ar')
-        ->get()
-);
-}
+        return DepartmentResource::collection(
+            $facility->departments()
+                ->where('is_active', true)
+                ->orderBy('name->ar')
+                ->get()
+        );
+    }
 }

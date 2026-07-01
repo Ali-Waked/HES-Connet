@@ -15,7 +15,6 @@ class StoreUnavailabilityRequest extends FormRequest
 
     public function rules(): array
     {
-        info($this->all());
         return [
             'facility_id' => ['required', 'exists:facilities,uuid'],
             'start_at' => ['required', 'date', 'after_or_equal:now'],

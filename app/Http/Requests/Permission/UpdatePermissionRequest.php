@@ -8,9 +8,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePermissionRequest extends FormRequest
 {
-    /**
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
@@ -22,7 +19,7 @@ class UpdatePermissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'key' => ['sometimes', 'required', 'string', 'max:255', 'unique:permissions,key,' . $this->route('permission')],
+            'key' => ['sometimes', 'required', 'string', 'max:255', 'unique:permissions,key,'.$this->route('permission')],
             'name' => ['sometimes', 'array'],
             'name.en' => ['required_with:name', 'string'],
             'name.ar' => ['required_with:name', 'string'],

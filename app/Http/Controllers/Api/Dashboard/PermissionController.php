@@ -12,24 +12,24 @@ use App\Http\Resources\PermissionResource;
 use App\Models\Permission;
 use App\Services\PermissionService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PermissionController extends Controller
 {
     public function __construct(
         private readonly PermissionService $permission_service,
         private readonly GetPermissionStats $getPermissionStats,
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return AnonymousResourceCollection
      */
     public function index()
     {
         return PermissionResource::collection(
-            $this->permission_service->paginate((int) request('per_page', 15),request('search'),)
+            $this->permission_service->paginate((int) request('per_page', 15), request('search'))
         );
     }
 

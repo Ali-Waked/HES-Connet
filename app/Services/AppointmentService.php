@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\AppointmentStatus;
+use App\Events\AppointmentCreated;
+use App\Events\AppointmentStatusChanged;
 use App\Models\Appointment;
 use App\Models\Facility;
 use App\Models\FacilityStaff;
@@ -16,6 +18,8 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AppointmentService
@@ -67,7 +71,111 @@ class AppointmentService
             endAt: $data['end_at'],
         );
 
-        return Appointment::create($data);
+        $appointment = Appointment::create($data);
+
+        event(new AppointmentCreated($appointment));
+
+        return $appointment;
+    }
+
+    public function bookForPatient(array $validated, User $user): Appointment
+    {
+        return DB::transaction(function () use ($validated, $user) {
+            $facility = Facility::where('uuid', $validated['facility_uuid'])->firstOrFail();
+            $doctor = Staff::where('uuid', $validated['doctor_uuid'])->firstOrFail();
+
+            $facilityStaff = FacilityStaff::where('facility_id', $facility->id)
+                ->where('staff_id', $doctor->id)
+                ->first();
+
+            if (! $facilityStaff) {
+                throw ValidationException::withMessages([
+                    'facility_uuid' => __('Doctor is not assigned to this facility.'),
+                ]);
+            }
+
+            $startAt = Carbon::parse($validated['start_at']);
+            $dayOfWeek = $startAt->dayOfWeek;
+
+            $schedule = $facilityStaff->schedules()
+                ->where('day_of_week', $dayOfWeek)
+                ->where('is_active', true)
+                ->first();
+
+            if (! $schedule) {
+                throw ValidationException::withMessages([
+                    'start_at' => __('Doctor is not available on this day.'),
+                ]);
+            }
+
+            $scheduleStart = Carbon::parse($startAt->toDateString().' '.$schedule->start_time);
+            $scheduleEnd = Carbon::parse($startAt->toDateString().' '.$schedule->end_time);
+
+            if ($startAt->lt($scheduleStart) || $startAt->gte($scheduleEnd)) {
+                throw ValidationException::withMessages([
+                    'start_at' => __('Selected time is outside working hours.'),
+                ]);
+            }
+
+            $diffMinutes = $scheduleStart->diffInMinutes($startAt);
+            if ($diffMinutes % $schedule->slot_duration !== 0) {
+                throw ValidationException::withMessages([
+                    'start_at' => __('Invalid slot selected.'),
+                ]);
+            }
+
+            $endAt = $startAt->copy()->addMinutes($schedule->slot_duration);
+
+            $isUnavailable = StaffUnavailability::where('facility_staff_id', $facilityStaff->id)
+                ->where('start_at', '<', $endAt)
+                ->where('end_at', '>', $startAt)
+                ->exists();
+
+            if ($isUnavailable) {
+                throw ValidationException::withMessages([
+                    'start_at' => __('Doctor is unavailable.'),
+                ]);
+            }
+
+            $alreadyBooked = Appointment::where('facility_staff_id', $facilityStaff->id)
+                ->where('status', '!=', AppointmentStatus::CANCELLED)
+                ->where('start_at', '<', $endAt)
+                ->where('end_at', '>', $startAt)
+                ->exists();
+
+            if ($alreadyBooked) {
+                throw ValidationException::withMessages([
+                    'start_at' => __('This slot has already been booked.'),
+                ]);
+            }
+
+            $patient = $user->patient()->firstOrCreate();
+
+            $hasActiveAppointment = Appointment::where('patient_id', $patient->id)
+                ->where('facility_staff_id', $facilityStaff->id)
+                ->whereIn('status', AppointmentStatus::activeStatuses())
+                ->exists();
+
+            if ($hasActiveAppointment) {
+                throw ValidationException::withMessages([
+                    'facility_uuid' => __('You already have an active appointment with this doctor.'),
+                ]);
+            }
+
+            $appointment = Appointment::create([
+                'uuid' => Str::uuid(),
+                'facility_staff_id' => $facilityStaff->id,
+                'patient_id' => $patient->id,
+                'start_at' => $startAt,
+                'end_at' => $endAt,
+                'status' => AppointmentStatus::SCHEDULED,
+                'reason' => $validated['reason'] ?? null,
+            ]);
+
+            event(new AppointmentCreated($appointment));
+
+            return $appointment;
+        });
     }
 
     public function update(User $user, Appointment $appointment, array $data): Appointment
@@ -86,85 +194,23 @@ class AppointmentService
             );
         }
 
+        $oldStatus = $appointment->status;
+
         $appointment->update($data);
 
-        return $appointment->refresh();
+        $appointment = $appointment->refresh();
+
+        if ($appointment->status !== $oldStatus) {
+            event(new AppointmentStatusChanged($appointment));
+        }
+
+        return $appointment;
     }
 
     public function destroy(User $user, Appointment $appointment): void
     {
         $this->authorizeAccess($user, $appointment);
         $appointment->delete();
-    }
-
-    public function cancel(User $user, Appointment $appointment, ?string $reason = null): Appointment
-    {
-        $this->authorizeAccess($user, $appointment);
-        $this->assertValidTransition($appointment, AppointmentStatus::CANCELLED);
-
-        $appointment->update([
-            'status' => AppointmentStatus::CANCELLED,
-            'cancellation_reason' => $reason,
-        ]);
-
-        return $appointment->refresh();
-    }
-
-    public function reschedule(
-        User $user,
-        Appointment $appointment,
-        string $newStartAt,
-        string $newEndAt,
-        ?string $reason = null,
-    ): Appointment {
-        $this->authorizeAccess($user, $appointment);
-        $this->assertValidTransition($appointment, AppointmentStatus::RESCHEDULED);
-
-        $this->validateBooking(
-            facilityStaffId: $appointment->facility_staff_id,
-            startAt: $newStartAt,
-            endAt: $newEndAt,
-            excludeAppointmentId: $appointment->id,
-        );
-
-        $appointment->reschedules()->create([
-            'old_start_at' => $appointment->start_at,
-            'old_end_at' => $appointment->end_at,
-            'new_start_at' => $newStartAt,
-            'new_end_at' => $newEndAt,
-            'reason' => $reason,
-        ]);
-
-        $appointment->update([
-            'start_at' => $newStartAt,
-            'end_at' => $newEndAt,
-            'status' => AppointmentStatus::RESCHEDULED,
-        ]);
-
-        return $appointment->refresh();
-    }
-
-    public function restore(User $user, Appointment $appointment): Appointment
-    {
-        $this->authorizeAccess($user, $appointment);
-
-        $appointment->update([
-            'status' => AppointmentStatus::SCHEDULED,
-            'cancellation_reason' => null,
-        ]);
-
-        return $appointment->refresh();
-    }
-
-    public function forceComplete(User $user, Appointment $appointment): Appointment
-    {
-        $this->authorizeAccess($user, $appointment);
-
-        $appointment->update([
-            'status' => AppointmentStatus::COMPLETED,
-        ]);
-
-        return $appointment->refresh();
     }
 
     public function stats(): array
@@ -489,23 +535,6 @@ class AppointmentService
         }
 
         abort(403, __('You do not have access to this appointment.'));
-    }
-
-    private function assertValidTransition(Appointment $appointment, AppointmentStatus $newStatus): void
-    {
-        $current = $appointment->status;
-
-        if ($current === $newStatus) {
-            abort(422, __('Appointment already has this status.'));
-        }
-
-        if (in_array($current, [AppointmentStatus::COMPLETED, AppointmentStatus::NO_SHOW])) {
-            abort(422, __('Cannot modify a :status appointment.', ['status' => $current->value]));
-        }
-
-        if ($current === AppointmentStatus::CANCELLED && $newStatus !== AppointmentStatus::SCHEDULED) {
-            abort(422, __('Cannot modify a cancelled appointment.'));
-        }
     }
 
     private function applyFilters(Builder $query, array $filters): Builder

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Article;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,16 +14,17 @@ class StoreArticleRequest extends FormRequest
 
     public function rules(): array
     {
+
         return [
-            'title' => ['required','array'],
+            'title' => ['required', 'array'],
             'title.en' => ['required', 'string', 'max:255'],
             'title.ar' => ['required', 'string', 'max:255'],
-            
-            'content' => ['required','array'],
+
+            'content' => ['required', 'array'],
             'content.en' => ['required', 'string'],
             'content.ar' => ['required', 'string'],
 
-            'category_id' => ['required', 'uuid'],
+            'category_id' => ['required', 'uuid', Rule::exists('categories', 'uuid')->where('type', 'article')],
 
             'status' => ['required', Rule::in(['draft', 'pending_review', 'published', 'archived', 'rejected'])],
 
@@ -32,9 +32,6 @@ class StoreArticleRequest extends FormRequest
             'tags.*' => ['uuid'],
 
             'cover_image' => ['required', 'image', 'max:5120'],
-
-            'images' => ['nullable', 'array'],
-            'images.*' => ['image', 'max:5120'],
         ];
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AccountStatus;
+use App\Traits\Auditable;
 use Database\Factories\PatientFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Patient extends Model
 {
     /** @use HasFactory<PatientFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     public function user(): BelongsTo
     {

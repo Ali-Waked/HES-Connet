@@ -21,12 +21,29 @@ class DepartmentResource extends JsonResource
         return array_merge([
             'id' => $this->id,
             'uuid' => $this->uuid,
-            'facility' => new FacilityResource($this->whenLoaded('facility')),
-            'head' => new StaffResource($this->whenLoaded('head')),
+
+            'head' => $this->whenLoaded('head', function () {
+                return [
+                    'uuid' => $this->head?->uuid,
+                    'name' => $this->head?->staff?->user?->name,
+                    'avatar' => $this->head?->staff?->user?->avatar,
+                    'specialization' => $this->head?->staff?->specialization,
+                ];
+            }),
+
+            'facility' => $this->whenLoaded('facilityStaff.facility', function () {
+                return [
+                    'uuid' => $this->facilityStaff?->facility?->uuid,
+                    'name' => $this->facilityStaff?->facility?->name,
+                ];
+            }),
+
             'staff_count' => $this->whenCounted('staff'),
+
             'created_at' => $this->created_at,
-            'is_active'=> $this->is_active,
+            'is_active' => $this->is_active,
             'image' => $this->image,
+
         ], $this->mapTranslatable(['name'], $isAdmin));
     }
 }

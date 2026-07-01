@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('facility_id')->constrained();
             $table->foreignId('medicine_id')->constrained();
             $table->integer('quantity');
-            $table->decimal('price',8,2);
+            $table->decimal('price', 8, 2);
             $table->timestamps();
         });
     }

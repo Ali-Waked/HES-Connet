@@ -35,7 +35,7 @@ class ArticleTest extends TestCase
 
     private function createPermission(string $key): Permission
     {
-        $permission = new Permission();
+        $permission = new Permission;
         $permission->uuid = Str::uuid();
         $permission->key = $key;
         $permission->name = ['en' => $key, 'ar' => ''];
@@ -257,10 +257,10 @@ class ArticleTest extends TestCase
     public function test_unauthenticated_cannot_access_any_endpoint(): void
     {
         $this->getJson('/api/staff/articles')->assertUnauthorized();
-        $this->getJson('/api/staff/articles/' . Str::uuid())->assertUnauthorized();
+        $this->getJson('/api/staff/articles/'.Str::uuid())->assertUnauthorized();
         $this->postJson('/api/staff/articles', $this->articleData())->assertUnauthorized();
-        $this->putJson('/api/staff/articles/' . Str::uuid(), ['title' => ['en' => 'X', 'ar' => 'ي']])->assertUnauthorized();
-        $this->deleteJson('/api/staff/articles/' . Str::uuid())->assertUnauthorized();
+        $this->putJson('/api/staff/articles/'.Str::uuid(), ['title' => ['en' => 'X', 'ar' => 'ي']])->assertUnauthorized();
+        $this->deleteJson('/api/staff/articles/'.Str::uuid())->assertUnauthorized();
     }
 
     // ─── CRUD Operations ───────────────────────────────────────────────────
@@ -402,7 +402,7 @@ class ArticleTest extends TestCase
         $user = $this->createUserWithRole('super_admin', []);
 
         $response = $this->actingAs($user, 'web')
-            ->getJson('/api/staff/articles/' . Str::uuid());
+            ->getJson('/api/staff/articles/'.Str::uuid());
 
         $response->assertNotFound();
     }

@@ -25,7 +25,7 @@ class PositionController extends Controller
                 (int) request('per_page', 15),
                 request('search'),
                 request('status') !== null
-                    ? filter_var((int)request('status'), FILTER_VALIDATE_BOOLEAN)
+                    ? filter_var((int) request('status'), FILTER_VALIDATE_BOOLEAN)
                     : null
             )
         );
@@ -82,12 +82,12 @@ class PositionController extends Controller
     }
 
     public function lookup()
-{
-    return response()->json(
-        Position::query()
-            ->where('is_active', true)
-            ->orderBy('name->ar')
-            ->get(['uuid', 'name'])
-    );
-}
+    {
+        return response()->json(
+            Position::query()
+                ->where('is_active', true)
+                ->orderBy('name->ar')
+                ->get(['uuid', 'name'])
+        );
+    }
 }

@@ -7,188 +7,211 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->createDefaultRoles();
-        $this->assignPermissions();
-    }
-
-    private function createDefaultRoles(): void
-    {
-        $roles = [
-            ['slug' => 'super_admin', 'en' => 'super_admin', 'ar' => 'مشرف عام', 'scope' => 'system'],
-            ['slug' => 'organization_owner', 'en' => 'organization_owner', 'ar' => 'مالك مؤسسة', 'scope' => 'system'],
-            ['slug' => 'facility_owner', 'en' => 'facility_owner', 'ar' => 'مالك المنشأة', 'scope' => 'facility'],
-            ['slug' => 'facility_manager', 'en' => 'facility_manager', 'ar' => 'مدير منشأة', 'scope' => 'facility'],
-            ['slug' => 'department_manager', 'en' => 'department_manager', 'ar' => 'مدير قسم', 'scope' => 'facility'],
-            ['slug' => 'doctor', 'en' => 'doctor', 'ar' => 'طبيب', 'scope' => 'facility'],
-            ['slug' => 'nurse', 'en' => 'nurse', 'ar' => 'ممرض', 'scope' => 'facility'],
-            ['slug' => 'pharmacist', 'en' => 'pharmacist', 'ar' => 'صيدلي', 'scope' => 'facility'],
-        ];
-
-        foreach ($roles as $role) {
-            Role::firstOrCreate(
-                ['slug' => $role['slug']],
-                [
-                    'name' => ['en' => $role['en'], 'ar' => $role['ar']],
-                    'slug' => $role['slug'],
-                    'scope' => $role['scope'],
-                    'is_system' => $role['scope'] === 'system',
-                    'uuid' => Str::uuid(),
-                ]
-            );
-        }
-    }
-
-    private function assignPermissions(): void
-    {
-        $superAdmin = Role::where('slug', 'super_admin')->first();
-        $orgOwner = Role::where('slug', 'organization_owner')->first();
-        $facilityOwner = Role::where('slug', 'facility_owner')->first();
-        $facilityManager = Role::where('slug', 'facility_manager')->first();
-        $deptManager = Role::where('slug', 'department_manager')->first();
-        $doctor = Role::where('slug', 'doctor')->first();
-        $nurse = Role::where('slug', 'nurse')->first();
-        $pharmacist = Role::where('slug', 'pharmacist')->first();
         $byKey = Permission::all()->keyBy('key');
 
-        if ($superAdmin) {
-            $superAdmin->permissions()->sync($byKey->pluck('id')->values()->toArray());
+        $this->assignSuperAdmin($byKey);
+        $this->assignOrganizationAdmin($byKey);
+        $this->assignHospitalAdmin($byKey);
+        $this->assignClinicAdmin($byKey);
+        $this->assignDepartmentManager($byKey);
+        $this->assignContentManager($byKey);
+        $this->assignFinanceManager($byKey);
+        $this->assignDoctorPortalUser($byKey);
+        $this->assignPharmacyPortalUser($byKey);
+        $this->assignPatientPortalUser($byKey);
+    }
+
+    private function assignSuperAdmin(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'super_admin')->first();
+        if ($role) {
+            $role->permissions()->sync($byKey->pluck('id')->values()->toArray());
+        }
+    }
+
+    private function assignOrganizationAdmin(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'organization_admin')->first();
+        if (! $role) {
+            return;
         }
 
-        $orgOwner->permissions()->sync(
-            collect([
-                'dashboard.view',
-                'organizations.view', 'organizations.manage', 'organizations.approve', 'organizations.reject',
-                'facilities.view', 'facilities.manage', 'facilities.approve', 'facilities.reject',
-                'departments.view', 'departments.manage',
-                'staff.view', 'staff.manage',
-                'patients.view', 'patients.manage',
-                'facility_documents.view', 'facility_documents.manage', 'facility_documents.approve', 'facility_documents.reject',
-                'facility_images.view', 'facility_images.manage',
-                'reviews.view',
-                'reports.view', 'reports.export',
-                'analytics.view',
-                'notifications.view', 'notifications.manage',
-                'activity_logs.view',
-            ])->map(fn (string $key) => $byKey->get($key)?->id)
-            ->filter()
-            ->values()
-            ->toArray()
-        );
+        $role->permissions()->sync(collect([
+            'view_dashboard_statistics',
+            'view_organizations', 'show_organization', 'create_organization', 'update_organization', 'delete_organization',
+            'view_facilities', 'show_facility', 'create_facility', 'update_facility', 'delete_facility',
+            'view_departments', 'show_department',
+            'view_staff', 'show_staff', 'create_staff', 'update_staff', 'delete_staff',
+            'view_patients', 'show_patient',
+            'view_users', 'show_user',
+            'view_roles', 'show_role',
+            'view_permissions', 'show_permission',
+            'view_reports', 'export_reports',
+            'view_notifications', 'send_notification',
+            'view_activity_logs',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
+    }
 
-        if ($facilityOwner) {
-            $facilityOwner->permissions()->sync(
-                collect([
-                    'facility_dashboard.view',
-                    'facilities.view', 'facilities.manage',
-                    'departments.view', 'departments.manage',
-                    'staff.view', 'staff.manage',
-                    'staff_schedules.view', 'staff_schedules.manage',
-                    'staff_unavailabilities.view', 'staff_unavailabilities.manage',
-                    'patients.view', 'patients.manage',
-                    'appointments.view', 'appointments.manage',
-                    'prescriptions.view', 'prescriptions.manage',
-                    'reviews.view', 'reviews.manage',
-                    'reports.view', 'reports.export',
-                    'analytics.view',
-                    'notifications.view', 'notifications.manage',
-                    'activity_logs.view',
-                    'profile.view', 'profile.update',
-                ])->map(fn (string $key) => $byKey->get($key)?->id)
-                ->filter()
-                ->values()
-                ->toArray()
-            );
+    private function assignHospitalAdmin(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'hospital_admin')->first();
+        if (! $role) {
+            return;
         }
 
-        $facilityManager->permissions()->sync(
-            collect([
-                'facility_dashboard.view',
-                'facilities.view', 'facilities.manage',
-                'departments.view', 'departments.manage',
-                'staff.view', 'staff.manage',
-                'patients.view', 'patients.manage',
-                'facility_documents.view', 'facility_documents.manage', 'facility_documents.approve', 'facility_documents.reject',
-                'facility_images.view', 'facility_images.manage',
-                'reviews.view', 'reviews.manage',
-                'reports.view', 'analytics.view',
-                'notifications.view', 'notifications.manage',
-                'activity_logs.view',
-                'profile.view', 'profile.update',
-            ])->map(fn (string $key) => $byKey->get($key)?->id)
-            ->filter()
-            ->values()
-            ->toArray()
-        );
+        $role->permissions()->sync(collect([
+            'view_dashboard_statistics',
+            'view_facilities', 'show_facility', 'update_facility',
+            'view_departments', 'show_department', 'create_department', 'update_department', 'delete_department',
+            'view_staff', 'show_staff', 'create_staff', 'update_staff', 'delete_staff',
+            'view_patients', 'show_patient', 'create_patient', 'update_patient',
+            'view_appointments', 'show_appointment', 'create_appointment', 'update_appointment', 'cancel_appointment',
+            'view_prescriptions', 'show_prescription', 'create_prescription', 'update_prescription',
+            'view_medication_requests', 'show_medication_request',
+            'view_medical_records', 'show_medical_record',
+            'view_staff_schedules', 'create_staff_schedule', 'update_staff_schedule', 'delete_staff_schedule',
+            'view_staff_unavailabilities', 'create_staff_unavailability', 'update_staff_unavailability', 'delete_staff_unavailability',
+            'view_reviews',
+            'view_facility_documents', 'upload_facility_document', 'delete_facility_document',
+            'view_facility_images', 'upload_facility_image', 'delete_facility_image',
+            'view_reports', 'export_reports',
+            'view_notifications', 'send_notification',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
+    }
 
-        $deptManager->permissions()->sync(
-            collect([
-                'facility_dashboard.view',
-                'departments.view', 'departments.manage',
-                'staff.view', 'staff.manage',
-                'patients.view',
-                'reviews.view',
-                'notifications.view',
-                'profile.view', 'profile.update',
-            ])->map(fn (string $key) => $byKey->get($key)?->id)
-            ->filter()
-            ->values()
-            ->toArray()
-        );
-
-        $doctor->permissions()->sync(
-            collect([
-                'facility_dashboard.view',
-                'patients.view', 'patients.manage',
-                'appointments.view', 'appointments.manage',
-                'prescriptions.view', 'prescriptions.manage',
-                'reviews.view',
-                'medication_requests.view', 'medication_requests.manage',
-                'notifications.view',
-                'profile.view', 'profile.update',
-            ])->map(fn (string $key) => $byKey->get($key)?->id)
-            ->filter()
-            ->values()
-            ->toArray()
-        );
-
-        $nurse->permissions()->sync(
-            collect([
-                'facility_dashboard.view',
-                'patients.view',
-                'appointments.view',
-                'staff_schedules.view',
-                'prescriptions.view',
-                'reviews.view',
-                'medication_requests.view',
-                'notifications.view',
-                'profile.view', 'profile.update',
-            ])->map(fn (string $key) => $byKey->get($key)?->id)
-            ->filter()
-            ->values()
-            ->toArray()
-        );
-
-        if ($pharmacist) {
-            $pharmacist->permissions()->sync(
-                collect([
-                    'facility_dashboard.view',
-                    'medicines.view',
-                    'prescriptions.view', 'prescriptions.manage',
-                    'medication_requests.view', 'medication_requests.manage', 'medication_requests.approve', 'medication_requests.reject',
-                    'notifications.view',
-                    'profile.view', 'profile.update',
-                ])->map(fn (string $key) => $byKey->get($key)?->id)
-                ->filter()
-                ->values()
-                ->toArray()
-            );
+    private function assignClinicAdmin(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'clinic_admin')->first();
+        if (! $role) {
+            return;
         }
 
+        $role->permissions()->sync(collect([
+            'view_dashboard_statistics',
+            'view_facilities', 'show_facility', 'update_facility',
+            'view_departments', 'show_department',
+            'view_staff', 'show_staff', 'create_staff', 'update_staff', 'delete_staff',
+            'view_patients', 'show_patient', 'create_patient', 'update_patient',
+            'view_appointments', 'show_appointment', 'create_appointment', 'update_appointment', 'cancel_appointment',
+            'view_prescriptions', 'show_prescription',
+            'view_medication_requests', 'show_medication_request',
+            'view_medical_records', 'show_medical_record',
+            'view_staff_schedules',
+            'view_reviews',
+            'view_notifications', 'send_notification',
+            'view_reports',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
+    }
+
+    private function assignDepartmentManager(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'department_manager')->first();
+        if (! $role) {
+            return;
+        }
+
+        $role->permissions()->sync(collect([
+            'view_dashboard_statistics',
+            'view_departments', 'show_department',
+            'view_staff', 'show_staff',
+            'view_patients', 'show_patient',
+            'view_appointments', 'show_appointment',
+            'view_staff_schedules',
+            'view_notifications',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
+    }
+
+    private function assignContentManager(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'content_manager')->first();
+        if (! $role) {
+            return;
+        }
+
+        $role->permissions()->sync(collect([
+            'view_articles', 'show_article', 'create_article', 'update_article', 'delete_article',
+            'view_stories', 'show_story', 'create_story', 'update_story', 'delete_story',
+            'view_contact_messages', 'show_contact_message', 'delete_contact_message',
+            'view_notifications', 'send_notification',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
+    }
+
+    private function assignFinanceManager(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'finance_manager')->first();
+        if (! $role) {
+            return;
+        }
+
+        $role->permissions()->sync(collect([
+            'view_dashboard_statistics',
+            'view_appointments', 'show_appointment',
+            'view_reports', 'export_reports',
+            'view_notifications',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
+    }
+
+    private function assignDoctorPortalUser(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'doctor_portal_user')->first();
+        if (! $role) {
+            return;
+        }
+
+        $role->permissions()->sync(collect([
+            'view_patients', 'show_patient',
+            'view_appointments', 'show_appointment', 'create_appointment', 'update_appointment', 'cancel_appointment',
+            'view_prescriptions', 'show_prescription', 'create_prescription', 'update_prescription',
+            'view_medication_requests', 'show_medication_request', 'create_medication_request', 'update_medication_request',
+            'view_medical_records', 'show_medical_record', 'create_medical_record', 'update_medical_record',
+            'view_reviews',
+            'view_notifications',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
+    }
+
+    private function assignPharmacyPortalUser(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'pharmacy_portal_user')->first();
+        if (! $role) {
+            return;
+        }
+
+        $role->permissions()->sync(collect([
+            'view_prescriptions', 'show_prescription',
+            'view_medication_requests', 'show_medication_request', 'update_medication_request',
+            'approve_medication_request', 'reject_medication_request',
+            'view_medicines', 'show_medicine',
+            'view_notifications',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
+    }
+
+    private function assignPatientPortalUser(Collection $byKey): void
+    {
+        $role = Role::where('slug', 'patient_portal_user')->first();
+        if (! $role) {
+            return;
+        }
+
+        $role->permissions()->sync(collect([
+            'view_appointments', 'show_appointment', 'create_appointment', 'cancel_appointment',
+            'view_prescriptions', 'show_prescription',
+            'view_medication_requests', 'show_medication_request', 'create_medication_request',
+            'view_medical_records', 'show_medical_record',
+            'view_profile', 'update_profile',
+        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
     }
 }

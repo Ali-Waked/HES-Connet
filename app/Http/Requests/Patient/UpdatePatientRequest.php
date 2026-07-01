@@ -8,9 +8,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePatientRequest extends FormRequest
 {
-    /**
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;

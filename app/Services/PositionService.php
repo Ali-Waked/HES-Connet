@@ -15,6 +15,7 @@ class PositionService
         ?bool $status = null
     ): LengthAwarePaginator {
         info(request()->all());
+
         return Position::query()
             ->when(
                 $search,

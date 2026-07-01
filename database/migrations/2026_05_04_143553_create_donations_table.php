@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('story_id')->constrained();
             $table->foreignId('donor_id')->constrained('users');
-            $table->decimal('amount',10,2);
+            $table->decimal('amount', 10, 2);
             $table->string('payment_method');
-            $table->enum('status',['pending','completed','failed']);
+            $table->enum('status', ['pending', 'completed', 'failed']);
             $table->timestamps();
         });
     }

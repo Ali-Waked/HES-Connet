@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Events\CategoryCreated;
+use App\Events\CategoryDeleted;
+use App\Events\CategoryUpdated;
 use App\Models\Category;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -18,7 +21,7 @@ class CategoryService
                 $search,
                 fn ($query) => $query->where(function ($q) use ($search) {
                     $q->where('name->en', 'like', "%{$search}%")
-                      ->orWhere('name->ar', 'like', "%{$search}%");
+                        ->orWhere('name->ar', 'like', "%{$search}%");
                 })
             )
             ->when(
@@ -35,19 +38,29 @@ class CategoryService
 
     public function create(array $data): Category
     {
-        return Category::create($data);
+        $category = Category::create($data);
+
+        event(new CategoryCreated($category));
+
+        return $category;
     }
 
     public function update(Category $category, array $data): Category
     {
         $category->update($data);
 
-        return $category->refresh();
+        $category = $category->refresh();
+
+        event(new CategoryUpdated($category));
+
+        return $category;
     }
 
     public function destroy(Category $category): void
     {
         $category->delete();
+
+        event(new CategoryDeleted($category));
     }
 
     public function getStats(): array

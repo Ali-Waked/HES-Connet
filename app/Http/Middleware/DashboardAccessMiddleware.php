@@ -14,7 +14,7 @@ class DashboardAccessMiddleware
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401);
         }
 
@@ -23,17 +23,17 @@ class DashboardAccessMiddleware
         }
 
         $allowed = match ($role) {
-            'admin' => false,
+            'admin' => $user->hasSystemRole(['organization_admin', 'super_admin']),
             'facility' => $user->staff && $user->staff->facilityStaff()->whereNull('ended_at')->exists(),
             'doctor' => $user->staff && $user->staff->facilityStaff()
                 ->whereNull('ended_at')
-                ->whereHas('role', fn ($q) => $q->where('slug', 'doctor'))
+                ->whereHas('staff.profession', fn ($q) => $q->where('slug', 'doctor'))
                 ->exists(),
             'patient' => $user->patientProfile()->exists(),
             default => false,
         };
 
-        if (!$allowed) {
+        if (! $allowed) {
             abort(403, __('You do not have access to this dashboard.'));
         }
 

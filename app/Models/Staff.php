@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AccountStatus;
+use App\Traits\Auditable;
 use Database\Factories\StaffFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,7 +43,7 @@ use Spatie\Translatable\HasTranslations;
 class Staff extends Model
 {
     /** @use HasFactory<StaffFactory> */
-    use HasFactory, HasTranslations, HasUuids;
+    use Auditable, HasFactory, HasTranslations, HasUuids;
 
     protected function casts(): array
     {

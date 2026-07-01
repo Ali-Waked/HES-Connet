@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_role', function (Blueprint $table) {
-             $table->foreignId('user_id')
+            $table->foreignId('user_id')
                 ->constrained()
                 ->cascadeOnDelete();
 
@@ -21,7 +21,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->timestamp('assigned_at')->nullable();
-             $table->unique(['user_id', 'role_id']);
+            $table->unique(['user_id', 'role_id']);
         });
     }
 

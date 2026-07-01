@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Tag;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTagRequest extends FormRequest
@@ -15,9 +14,9 @@ class UpdateTagRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes','required','array'],
-            'name.en' => ['sometimes','required', 'string', 'max:255'],
-            'name.ar' => ['sometimes','required', 'string', 'max:255'],
+            'name' => ['sometimes', 'required', 'array'],
+            'name.en' => ['sometimes', 'required', 'string', 'max:255'],
+            'name.ar' => ['sometimes', 'required', 'string', 'max:255'],
         ];
     }
 }

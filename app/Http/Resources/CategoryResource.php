@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class CategoryResource extends JsonResource
 {
     use HasTranslatableFields;
-    
+
     /**
      * @return array<string, mixed>
      */
@@ -23,6 +23,6 @@ class CategoryResource extends JsonResource
             'type' => $this->type,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,
-        ], $this->mapTranslatable(['name','description'], $isAdmin));
+        ], $this->mapTranslatable(['name', 'description'], $isAdmin));
     }
 }

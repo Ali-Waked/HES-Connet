@@ -24,6 +24,7 @@ class FacilityReviewResource extends JsonResource
             'patient' => $this->whenLoaded('patient', fn () => [
                 'uuid' => $this->patient->user->uuid,
                 'name' => $this->patient->user->getTranslations('name'),
+                'avatar' => $this->patient->user->avatar,
             ]),
         ];
     }

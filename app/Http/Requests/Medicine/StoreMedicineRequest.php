@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Medicine;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreMedicineRequest extends FormRequest
@@ -16,7 +15,6 @@ class StoreMedicineRequest extends FormRequest
 
     public function rules(): array
     {
-        info($this->all());
         return [
             'name' => ['required', 'array'],
             'name.en' => ['required', 'string', 'max:255'],

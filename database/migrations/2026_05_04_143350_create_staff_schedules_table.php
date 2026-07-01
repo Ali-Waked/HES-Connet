@@ -21,7 +21,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->unique(['facility_staff_id', 'day_of_week', 'start_time', 'end_time']);
+            $table->unique(['facility_staff_id', 'day_of_week', 'start_time', 'end_time'], 'ss_fs_schedule_unique');
         });
     }
 

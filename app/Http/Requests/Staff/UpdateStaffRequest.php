@@ -8,9 +8,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateStaffRequest extends FormRequest
 {
-    /**
-     * @return bool
-     */
     public function authorize(): bool
     {
         return true;
@@ -21,7 +18,6 @@ class UpdateStaffRequest extends FormRequest
      */
     public function rules(): array
     {
-        info($this->all());
         return [
             'user_id' => ['sometimes', 'required', 'exists:users,id'],
             'name' => ['sometimes', 'required', 'array'],

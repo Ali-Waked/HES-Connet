@@ -16,19 +16,17 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class RoleController extends Controller
 {
-    public function __construct(private readonly RoleService $role_service)
-    {
-    }
+    public function __construct(private readonly RoleService $role_service) {}
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return AnonymousResourceCollection
      */
     public function index()
     {
         return RoleResource::collection(
-            $this->role_service->paginate((int) request('per_page', 15),request('search'))
+            $this->role_service->paginate((int) request('per_page', 15), request('search'))
         );
     }
 
@@ -80,7 +78,7 @@ class RoleController extends Controller
         ]);
     }
 
-      public function stats(): JsonResponse
+    public function stats(): JsonResponse
     {
         return response()->json([
             'success' => true,
@@ -90,7 +88,7 @@ class RoleController extends Controller
 
     public function facilityRoles(): AnonymousResourceCollection
     {
-        $roles = Role::facility()->active()->get(['id','uuid', 'name', 'slug']);
+        $roles = Role::facility()->active()->get(['id', 'uuid', 'name', 'slug']);
 
         return FacilityRoleResource::collection($roles);
     }

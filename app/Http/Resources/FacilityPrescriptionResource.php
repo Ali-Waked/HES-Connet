@@ -29,7 +29,7 @@ class FacilityPrescriptionResource extends JsonResource
                 'patient' => [
                     'uuid' => $this->appointment?->patient?->uuid,
                     'name' => $this->appointment?->patient?->user?->name,
-                    'phone' => $this->appointment?->patient?->user?->phone,
+                    'phone' => $this->appointment?->patient?->user?->profile?->phone,
                     'avatar' => $this->appointment?->patient?->user?->avatar,
                 ],
 

@@ -25,7 +25,7 @@ class UpdateArticleRequest extends FormRequest
             'content.en' => ['sometimes', 'required', 'string'],
             'content.ar' => ['sometimes', 'required', 'string'],
 
-            'category_id' => ['sometimes', 'required', 'uuid', 'exists:categories,uuid'],
+            'category_id' => ['sometimes', 'required', 'uuid', Rule::exists('categories', 'uuid')->where('type', 'article')],
 
             'status' => ['sometimes', 'required', Rule::in(['draft', 'pending_review', 'published', 'archived'])],
 

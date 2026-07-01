@@ -42,12 +42,12 @@ class CategoryController extends Controller
     public function show(Category $category): JsonResponse
     {
         return response()->json([
-            'data' =>[
+            'data' => [
                 'name' => $category->getTranslations('name'),
                 'description' => $category->getTranslations('description'),
                 'is_active' => $category->is_active,
-                'type' => $category->type
-            ]
+                'type' => $category->type,
+            ],
         ]);
     }
 

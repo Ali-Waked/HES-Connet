@@ -20,7 +20,7 @@ class UserProfilesResource extends JsonResource
             'gender' => $this->gender,
             'birth_date' => $this->birth_date,
             'address' => $this->address,
-            'profile_image' => $this->profile_image,
+            'avatar' => $this->profile_image,
             'cover_image' => $this->cover_image,
         ];
     }

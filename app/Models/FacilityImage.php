@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Storage;
 #[Fillable(['facility_id', 'image_url'])]
 class FacilityImage extends Model
 {
+    use Auditable;
+
     use HasUuids;
 
     public $timestamps = false;

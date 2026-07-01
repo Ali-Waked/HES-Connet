@@ -13,7 +13,6 @@ class StoreConversationRequest extends FormRequest
 
     public function rules(): array
     {
-        info($this->all());
 
         return [
             'type' => ['required', 'string', 'in:support,doctor_patient'],

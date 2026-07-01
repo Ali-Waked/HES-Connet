@@ -14,9 +14,7 @@ use Illuminate\Http\JsonResponse;
 
 class StaffUnavailabilityController extends Controller
 {
-    public function __construct(private readonly StaffUnavailabilityService $staff_unavailability_service)
-    {
-    }
+    public function __construct(private readonly StaffUnavailabilityService $staff_unavailability_service) {}
 
     public function index()
     {

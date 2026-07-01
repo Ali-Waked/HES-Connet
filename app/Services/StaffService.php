@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\StaffAssigned;
+use App\Events\StaffUnassigned;
 use App\Models\Department;
 use App\Models\Facility;
 use App\Models\FacilityStaff;
@@ -15,6 +17,7 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class StaffService
@@ -47,7 +50,8 @@ class StaffService
     public function checkEmail(string $email): array
     {
         $user = User::query()
-            ->select(['id', 'uuid', 'name', 'email', 'avatar', 'cover_image'])
+            ->select(['id', 'uuid', 'name', 'email'])
+            ->with('profile')
             ->where('email', $email)
             ->first();
 
@@ -84,13 +88,16 @@ class StaffService
     {
         return DB::transaction(function () use ($data) {
 
+            $avatarPath = null;
+            $coverPath = null;
+
             if (! empty($data['cover_image'])) {
-                $data['cover_image'] = $data['cover_image']
+                $coverPath = $data['cover_image']
                     ->store('users/cover', 'public');
             }
 
             if (! empty($data['avatar'])) {
-                $data['avatar'] = $data['avatar']
+                $avatarPath = $data['avatar']
                     ->store('users/avatar', 'public');
             }
 
@@ -100,10 +107,16 @@ class StaffService
                 ],
                 [
                     'name' => $data['name'],
-                    'password' => Hash::make('password'), // Str::random(32)
-                    'cover_image' => $data['cover_image'] ?? null,
-                    'avatar' => $data['avatar'] ?? null,
+                    'password' => Hash::make('password'),
                 ]
+            );
+
+            $user->profile()->updateOrCreate(
+                ['user_id' => $user->id],
+                array_filter([
+                    'profile_image' => $avatarPath,
+                    'cover_image' => $coverPath,
+                ], fn ($v) => $v !== null)
             );
             $staff = Staff::firstOrCreate(
                 [
@@ -163,7 +176,7 @@ class StaffService
                     ]);
                 }
 
-                FacilityStaff::create([
+                $facilityStaff = FacilityStaff::create([
                     'staff_id' => $staff->id,
                     'facility_id' => $facilityId,
                     'department_id' => $departmentId,
@@ -172,6 +185,8 @@ class StaffService
                     'joined_at' => now(),
                     'ended_at' => null,
                 ]);
+
+                event(new StaffAssigned($facilityStaff));
             }
 
             return $staff->load([
@@ -192,7 +207,6 @@ class StaffService
             'departmentsAsHead',
             // 'doctorSchedules',
             'facilities',
-            'symptoms',
             'position',
         ]);
     }
@@ -202,22 +216,33 @@ class StaffService
         return DB::transaction(function () use ($staff, $data) {
 
             // 1. رفع الملفات الجديدة (وحذف القديمة من التخزين عند الاستبدال)
+            $profilePayload = [];
+
             if (! empty($data['cover_image'])) {
-                if ($staff->user->cover_image) {
-                    Storage::disk('public')->delete($staff->user->cover_image);
+                $oldImage = $staff->user->profile?->getRawOriginal('cover_image');
+                if ($oldImage) {
+                    Storage::disk('public')->delete($oldImage);
                 }
-                $data['cover_image'] = $data['cover_image']->store('users/cover', 'public');
+                $profilePayload['cover_image'] = $data['cover_image']->store('users/cover', 'public');
             }
 
             if (! empty($data['avatar'])) {
-                if ($staff->user->avatar) {
-                    Storage::disk('public')->delete($staff->user->avatar);
+                $oldImage = $staff->user->profile?->getRawOriginal('profile_image');
+                if ($oldImage) {
+                    Storage::disk('public')->delete($oldImage);
                 }
-                $data['avatar'] = $data['avatar']->store('users/avatar', 'public');
+                $profilePayload['profile_image'] = $data['avatar']->store('users/avatar', 'public');
+            }
+
+            if (! empty($profilePayload)) {
+                $staff->user->profile()->updateOrCreate(
+                    ['user_id' => $staff->user->id],
+                    $profilePayload
+                );
             }
 
             // 2. تحديث بيانات المستخدم المرتبط (فقط الحقول المرسلة فعلاً)
-            $userPayload = array_intersect_key($data, array_flip(['name', 'avatar', 'cover_image']));
+            $userPayload = array_intersect_key($data, array_flip(['name']));
 
             if (! empty($userPayload)) {
                 $staff->user->update($userPayload);
@@ -285,7 +310,7 @@ class StaffService
                             'role_id' => $role->id,
                         ]);
                     } else {
-                        FacilityStaff::create([
+                        $facilityStaff = FacilityStaff::create([
                             'staff_id' => $staff->id,
                             'facility_id' => $facilityId,
                             'department_id' => $departmentId,
@@ -294,17 +319,24 @@ class StaffService
                             'joined_at' => now(),
                             'ended_at' => null,
                         ]);
+
+                        event(new StaffAssigned($facilityStaff));
                     }
 
                     $incomingFacilityIds[] = $facilityId;
                 }
 
                 // إنهاء التعيينات النشطة لأي facility لم تُرسل ضمن الطلب
-                FacilityStaff::query()
+                $endedRecords = FacilityStaff::query()
                     ->where('staff_id', $staff->id)
                     ->whereNotIn('facility_id', $incomingFacilityIds)
                     ->whereNull('ended_at')
-                    ->update(['ended_at' => now()]);
+                    ->get();
+
+                foreach ($endedRecords as $existing) {
+                    $existing->update(['ended_at' => now()]);
+                    event(new StaffUnassigned($existing));
+                }
             }
 
             return $staff->load([

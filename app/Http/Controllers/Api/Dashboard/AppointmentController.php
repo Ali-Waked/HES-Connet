@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Appointment\CancelAppointmentRequest;
-use App\Http\Requests\Appointment\RescheduleAppointmentRequest;
 use App\Http\Requests\Appointment\StoreAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentRequest;
-use App\Http\Resources\Dashboard\AppointmentResource;
 use App\Http\Resources\Dashboard\AppointmentCalendarResource;
+use App\Http\Resources\Dashboard\AppointmentResource;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
 use Illuminate\Http\JsonResponse;
@@ -18,9 +16,7 @@ use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
-    public function __construct(private readonly AppointmentService $appointmentService)
-    {
-    }
+    public function __construct(private readonly AppointmentService $appointmentService) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -78,56 +74,6 @@ class AppointmentController extends Controller
 
         return response()->json([
             'message' => __('Appointment deleted successfully.'),
-        ]);
-    }
-
-    public function cancel(CancelAppointmentRequest $request, Appointment $appointment): JsonResponse
-    {
-        $appointment = $this->appointmentService->cancel(
-            $request->user(),
-            $appointment,
-            $request->validated('reason')
-        );
-
-        return response()->json([
-            'message' => __('Appointment cancelled successfully.'),
-            'data' => new AppointmentResource($appointment),
-        ]);
-    }
-
-    public function reschedule(RescheduleAppointmentRequest $request, Appointment $appointment): JsonResponse
-    {
-        $appointment = $this->appointmentService->reschedule(
-            $request->user(),
-            $appointment,
-            $request->validated('start_at'),
-            $request->validated('end_at'),
-            $request->validated('reason'),
-        );
-
-        return response()->json([
-            'message' => __('Appointment rescheduled successfully.'),
-            'data' => new AppointmentResource($appointment),
-        ]);
-    }
-
-    public function restore(Request $request, Appointment $appointment): JsonResponse
-    {
-        $appointment = $this->appointmentService->restore($request->user(), $appointment);
-
-        return response()->json([
-            'message' => __('Appointment restored successfully.'),
-            'data' => new AppointmentResource($appointment),
-        ]);
-    }
-
-    public function forceComplete(Request $request, Appointment $appointment): JsonResponse
-    {
-        $appointment = $this->appointmentService->forceComplete($request->user(), $appointment);
-
-        return response()->json([
-            'message' => __('Appointment marked as completed.'),
-            'data' => new AppointmentResource($appointment),
         ]);
     }
 

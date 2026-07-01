@@ -15,7 +15,6 @@ class StoreStaffUnavailabilityRequest extends FormRequest
 
     public function rules(): array
     {
-        info($this->all());
         return [
             'facility_staff_uuid' => ['required', 'exists:facility_staff,uuid'],
             'start_at' => ['required', 'date', 'after_or_equal:now'],
