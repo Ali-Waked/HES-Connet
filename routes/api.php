@@ -3,18 +3,23 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\ContactMessageController as AdminContactMessageController;
-use App\Http\Controllers\Api\Admin\PrescriptionController as AdminPrescriptionController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CityLookupController;
 use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\Dashboard\AiController;
 use App\Http\Controllers\Api\Dashboard\AppointmentController;
 use App\Http\Controllers\Api\Dashboard\ArticleController;
+use App\Http\Controllers\Api\Dashboard\AuditLogController;
 use App\Http\Controllers\Api\Dashboard\CategoryController;
+use App\Http\Controllers\Api\Dashboard\CommentController as DashboardCommentController;
 use App\Http\Controllers\Api\Dashboard\ConversationManagementController;
 use App\Http\Controllers\Api\Dashboard\DashboardAnalyticsController;
+use App\Http\Controllers\Api\Dashboard\DashboardController;
+use App\Http\Controllers\Api\Dashboard\DashboardReportController;
 use App\Http\Controllers\Api\Dashboard\DepartmentController;
 use App\Http\Controllers\Api\Dashboard\FacilityController;
 use App\Http\Controllers\Api\Dashboard\FacilityReviewController;
+use App\Http\Controllers\Api\Dashboard\InvoiceController;
 use App\Http\Controllers\Api\Dashboard\OrganizationController;
 use App\Http\Controllers\Api\Dashboard\OrganizationStatsController;
 use App\Http\Controllers\Api\Dashboard\OrganizationUserController;
@@ -29,37 +34,59 @@ use App\Http\Controllers\Api\Dashboard\StaffController;
 use App\Http\Controllers\Api\Dashboard\StaffPositionController;
 use App\Http\Controllers\Api\Dashboard\StaffScheduleController;
 use App\Http\Controllers\Api\Dashboard\StaffUnavailabilityController;
+use App\Http\Controllers\Api\Dashboard\StoryController as DashboardStoryController;
+use App\Http\Controllers\Api\Dashboard\SymptomController as DashboardSymptomController;
 use App\Http\Controllers\Api\Dashboard\TagController;
 use App\Http\Controllers\Api\Dashboard\UserController;
+use App\Http\Controllers\Api\Dashboard\UsersController as SuperAdminUsersController;
 use App\Http\Controllers\Api\Facility\AppointmentController as FacilityAppointmentController;
-use App\Http\Controllers\Api\Facility\ArticleController as FacilityArticleController;
+// use App\Http\Controllers\Api\Facility\ArticleController as FacilityArticleController;
 use App\Http\Controllers\Api\Facility\FacilityDashboardController;
+use App\Http\Controllers\Api\Facility\FacilityReportController;
 use App\Http\Controllers\Api\Facility\MedicineController as FacilityMedicineController;
 use App\Http\Controllers\Api\Facility\NotificationController as FacilityNotificationController;
 use App\Http\Controllers\Api\Facility\PatientController as FacilityPatientController;
-use App\Http\Controllers\Api\Facility\ProfileController as FacilityProfileController;
 use App\Http\Controllers\Api\Facility\ReviewController as FacilityPortalReviewController;
+use App\Http\Controllers\Api\Facility\StaffController as FacilityStaffController;
+use App\Http\Controllers\Api\Facility\StaffLookupController;
 use App\Http\Controllers\Api\Facility\StaffReviewController;
-use App\Http\Controllers\Api\FacilityOwner\PrescriptionController as FacilityOwnerPrescriptionController;
+use App\Http\Controllers\Api\Facility\StaffScheduleController as FacilityStaffScheduleController;
+use App\Http\Controllers\Api\Facility\SymptomController as FacilitySymptomController;
+use App\Http\Controllers\Api\Facility\UsersController as FacilityUsersController;
+use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\MedicineController;
+use App\Http\Controllers\Api\Patient\AiConsultationController;
 use App\Http\Controllers\Api\Patient\MedicationRequestController;
 use App\Http\Controllers\Api\Patient\PrescriptionController as PatientPrescriptionController;
+use App\Http\Controllers\Api\Patient\StoryController;
+use App\Http\Controllers\Api\PlatformReviewController as UserPlatformReviewController;
 use App\Http\Controllers\Api\Public\AppointmentController as PublicAppointmentController;
 use App\Http\Controllers\Api\Public\ArticleController as PublicArticleController;
+use App\Http\Controllers\Api\Public\CommentController as PublicCommentController;
 use App\Http\Controllers\Api\Public\ContactMessageController as PublicContactMessageController;
 use App\Http\Controllers\Api\Public\DoctorController as PublicDoctorController;
+use App\Http\Controllers\Api\Public\DonationController;
 use App\Http\Controllers\Api\Public\FacilityController as PublicFacilityController;
+use App\Http\Controllers\Api\Public\FacilityReviewController as PublicFacilityReviewController;
 use App\Http\Controllers\Api\Public\HomeController as PublicHomeController;
+use App\Http\Controllers\Api\Public\JobPostController as PublicJobPostController;
 use App\Http\Controllers\Api\Public\PageController as PublicPageController;
+use App\Http\Controllers\Api\Public\PaymentController;
+use App\Http\Controllers\Api\Public\ProfileController;
+use App\Http\Controllers\Api\Public\PublicSubscriptionController;
 use App\Http\Controllers\Api\Public\ReviewController as PublicReviewController;
-use App\Http\Controllers\Api\Public\StoryController;
+use App\Http\Controllers\Api\Public\StoryController as PublicStoryController;
+use App\Http\Controllers\Api\Public\WebhookController;
+use App\Http\Controllers\Api\SearchHistoryController;
 use App\Http\Controllers\Api\Staff\ArticleController as StaffArticleController;
 use App\Http\Controllers\Api\Staff\AvailabilityController as StaffAvailabilityController;
 use App\Http\Controllers\Api\Staff\MedicationRequestController as StaffMedicationRequestController;
 use App\Http\Controllers\Api\Staff\PrescriptionController as StaffPrescriptionController;
 use App\Http\Controllers\Api\Staff\ScheduleController as StaffOwnScheduleController;
 use App\Http\Controllers\Api\Staff\StaffFacilityController;
+use App\Http\Controllers\Api\Staff\SymptomController as StaffSymptomController;
 use App\Http\Controllers\Api\Staff\UnavailabilityController as StaffOwnUnavailabilityController;
+use App\Http\Controllers\Api\Staff\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 // =============================================================================
@@ -69,6 +96,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('/contact-us', [PublicContactMessageController::class, 'store']);
 
 Route::get('/cities/list', [CityLookupController::class, 'index']);
+
+Route::get('/categories/{type}', App\Http\Controllers\Api\CategoryController::class);
+Route::get('/tags', App\Http\Controllers\Api\TagController::class);
 
 Route::prefix('doctors')->group(function () {
     Route::get('/', [PublicDoctorController::class, 'index']);
@@ -81,11 +111,24 @@ Route::prefix('doctors')->group(function () {
 Route::prefix('facilities')->group(function () {
     Route::get('/', [PublicFacilityController::class, 'index']);
     Route::get('{facility}', [PublicFacilityController::class, 'show']);
+    Route::get('{facility}/reviews', [PublicFacilityReviewController::class, 'index']);
+    Route::post('{facility}/reviews', [PublicFacilityReviewController::class, 'store'])->middleware('auth:sanctum');
 });
 
 Route::prefix('articles')->group(function () {
     Route::get('/', [PublicArticleController::class, 'index']);
     Route::get('{article}', [PublicArticleController::class, 'show']);
+    Route::get('{article:uuid}/comments', [PublicCommentController::class, 'index']);
+});
+
+Route::middleware('auth:sanctum')->prefix('articles')->group(function () {
+    Route::post('{article:uuid}/comment', [PublicCommentController::class, 'store']);
+    Route::put('{article:uuid}/comment/{comment}', [PublicCommentController::class, 'update']);
+    Route::delete('{article:uuid}/comment/{comment}', [PublicCommentController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/set-active-workspace/{facility}', [WorkspaceController::class, 'setActiveWorkspace']);
 });
 
 Route::prefix('appointments')->group(function () {
@@ -94,16 +137,73 @@ Route::prefix('appointments')->group(function () {
     Route::get('{article}', [PublicAppointmentController::class, 'show']);
 });
 
+Route::get('/stories', [PublicStoryController::class, 'index']);
+Route::get('/stories/{story}', [PublicStoryController::class, 'show']);
 Route::get('/home', PublicHomeController::class);
 
 Route::get('/pages/{slug}', [PublicPageController::class, 'show']);
 Route::post('/reviews/{appointment}', [PublicReviewController::class, 'store']);
+
+Route::prefix('job-posts')->group(function () {
+    Route::get('/', [PublicJobPostController::class, 'index']);
+    Route::get('{slug}', [PublicJobPostController::class, 'show']);
+});
+
+Route::prefix('public/subscriptions')->group(function () {
+    Route::post('/', [PublicSubscriptionController::class, 'subscribe']);
+    Route::get('/verify/{token}', [PublicSubscriptionController::class, 'verify'])->name('subscriptions.verify');
+    Route::patch('/{token}', [PublicSubscriptionController::class, 'update'])->name('subscriptions.update');
+    Route::post('/unsubscribe/{token}', [PublicSubscriptionController::class, 'unsubscribe'])->name('subscriptions.unsubscribe');
+});
+
+// =============================================================================
+// DONATIONS & PAYMENTS
+// =============================================================================
+
+Route::prefix('donations')->group(function () {
+    Route::get('/', [DonationController::class, 'index']);
+    Route::get('status', [DonationController::class, 'status']);
+    Route::post('{story}/checkout', [DonationController::class, 'checkout']);
+});
+
+Route::prefix('payments')->group(function () {
+    Route::post('/stripe/checkout', [PaymentController::class, 'createStripeCheckout']);
+});
+
+Route::post('/webhooks/stripe', [WebhookController::class, 'stripe']);
 
 // =============================================================================
 // AUTHENTICATED SHARED ROUTES
 // =============================================================================
 
 Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'profile']);
+Route::middleware('auth:sanctum')->put('/profile', [ProfileController::class, 'update']);
+Route::middleware('auth:sanctum')->prefix('platform-reviews')->group(function () {
+    Route::get('/', [UserPlatformReviewController::class, 'myReview']);
+    Route::post('/', [UserPlatformReviewController::class, 'store']);
+    Route::put('/', [UserPlatformReviewController::class, 'update']);
+    Route::delete('/', [UserPlatformReviewController::class, 'destroy']);
+});
+
+// =============================================================================
+// SEARCH HISTORY
+// =============================================================================
+
+Route::middleware('auth:sanctum')->prefix('search-histories')->group(function () {
+    Route::get('/', [SearchHistoryController::class, 'index']);
+    Route::post('/', [SearchHistoryController::class, 'store']);
+    Route::delete('/', [SearchHistoryController::class, 'destroy']);
+});
+
+// =============================================================================
+// FAVORITES
+// =============================================================================
+
+Route::middleware('auth:sanctum')->prefix('favorites')->group(function () {
+    Route::get('/', [FavoriteController::class, 'index']);
+    Route::post('/', [FavoriteController::class, 'toggle']);
+    Route::delete('{favorite}', [FavoriteController::class, 'destroy']);
+});
 
 // =============================================================================
 // USER CONVERSATIONS
@@ -126,7 +226,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/medicines', [MedicineController::class, 'index']);
     Route::get('/medicines/lookup', [MedicineController::class, 'lookup']);
     Route::get('/medicines/{medicine}', [MedicineController::class, 'show']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('patient')->group(function () {
+    Route::get('/stories', [StoryController::class, 'index']);
     Route::post('/stories', [StoryController::class, 'store']);
+    Route::put('/stories/{story}', [StoryController::class, 'update']);
+});
+
+// Story Donations
+Route::middleware(['auth:sanctum'])->prefix('story')->group(function () {
+    Route::get('/{story}/donations', [App\Http\Controllers\Api\Story\DonationController::class, 'index']);
+    Route::post('/{story}/donations', [App\Http\Controllers\Api\Story\DonationController::class, 'store']);
+    Route::get('/{story}/donations/stats', [App\Http\Controllers\Api\Story\DonationController::class, 'stats']);
 });
 
 Route::middleware(['auth:sanctum', 'permission:medicines.manage'])->group(function () {
@@ -136,12 +248,12 @@ Route::middleware(['auth:sanctum', 'permission:medicines.manage'])->group(functi
 });
 
 // Staff Articles — staff can only see/manage their own articles
-Route::middleware(['auth:sanctum', 'permission:articles.view'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('staff')->name('staff.')->group(function () {
     Route::get('/articles', [StaffArticleController::class, 'index'])->name('articles.index');
     Route::get('/articles/{article}', [StaffArticleController::class, 'show'])->name('articles.show');
 });
 
-Route::middleware(['auth:sanctum', 'permission:articles.manage'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('staff')->name('staff.')->group(function () {
     Route::post('/articles', [StaffArticleController::class, 'store'])->name('articles.store');
     Route::put('/articles/{article}', [StaffArticleController::class, 'update'])->name('articles.update');
     Route::delete('/articles/{article}', [StaffArticleController::class, 'destroy'])->name('articles.destroy');
@@ -169,13 +281,17 @@ Route::middleware('auth:sanctum')->prefix('staff')->name('staff.')->group(functi
     Route::get('/facilities', [StaffFacilityController::class, 'index'])->name('facilities.index');
 });
 
+// Staff Symptoms
+Route::middleware('auth:sanctum')->prefix('staff')->name('staff.')->group(function () {
+    Route::get('/symptoms', [StaffSymptomController::class, 'index'])->name('symptoms.index');
+    Route::put('symptoms/{facility_staff}', [StaffSymptomController::class, 'update'])->name('symptoms.update');
+});
+
 Route::middleware(['auth:sanctum', 'dashboard.access:doctor'])
     ->prefix('doctor')
     ->name('doctor.')
     ->group(function () {
         // Doctor dashboard routes are registered here.
-        // Example:
-        // Route::get('/dashboard', [DoctorDashboardController::class, 'index'])->name('dashboard');
     });
 
 Route::middleware(['auth:sanctum', 'dashboard.access:patient'])
@@ -183,19 +299,18 @@ Route::middleware(['auth:sanctum', 'dashboard.access:patient'])
     ->name('patient.')
     ->group(function () {
         // Patient dashboard routes are registered here.
-        // Example:
-        // Route::get('/dashboard', [PatientDashboardController::class, 'index'])->name('dashboard');
     });
 
 // =============================================================================
 // ADMIN ROUTES
 // =============================================================================
 
-Route::middleware(['auth:sanctum', 'dashboard.access:admin'])->prefix('dashboard')->group(function () {
+Route::middleware(['auth:sanctum', ''])->prefix('dashboard')->group(function () {
     Route::get(
         'facilities/{facility:uuid}/review-stats',
         [FacilityReviewController::class, 'stats']
     )->name('facility-reviews.stats');
+    Route::get('/{facility}/staffs', [StaffController::class, 'lookup']);
 
     Route::get('/prescriptions', [PrescriptionController::class, 'index']);
     Route::get('/prescriptions/analytics', [DashboardAnalyticsController::class, 'dashboard']);
@@ -204,6 +319,8 @@ Route::middleware(['auth:sanctum', 'dashboard.access:admin'])->prefix('dashboard
 
     Route::get('/facilities/stats', [FacilityController::class, 'stats']);
     Route::get('/facilities/{facility}/edit', [FacilityController::class, 'edit']);
+    Route::patch('/comments/{comment}/hide', [DashboardCommentController::class, 'hide']);
+    Route::patch('/comments/{comment}/show', [DashboardCommentController::class, 'show']);
     Route::get('/articles/stats', [ArticleController::class, 'stats']);
     Route::get('/departments/stats', [DepartmentController::class, 'stats']);
     Route::get('/tags/stats', [TagController::class, 'stats']);
@@ -236,6 +353,10 @@ Route::middleware(['auth:sanctum', 'dashboard.access:admin'])->prefix('dashboard
 
     Route::prefix('staff-positions')->group(function () {
         require base_path('routes/api/dashboard/staff-positions.php');
+    });
+
+    Route::prefix('job-posts')->group(function () {
+        require base_path('routes/api/dashboard/job-posts.php');
     });
 
     Route::post(
@@ -274,17 +395,60 @@ Route::middleware(['auth:sanctum', 'dashboard.access:admin'])->prefix('dashboard
         'articles' => ArticleController::class,
         'staff-schedules' => StaffScheduleController::class,
         'staff-unavailabilities' => StaffUnavailabilityController::class,
-        'reviews' => DashboardPlatformReviewController::class,
+        'platform-reviews' => DashboardPlatformReviewController::class,
         'organization-users' => OrganizationUserController::class,
         'positions' => PositionController::class,
         'medicines' => MedicineController::class,
     ]);
+
+    Route::post('platform-reviews/{platform_review}/reply', [DashboardPlatformReviewController::class, 'reply']);
+
+    Route::prefix('symptoms')->group(function () {
+        Route::get('/', [DashboardSymptomController::class, 'index']);
+        Route::get('/stats', [DashboardSymptomController::class, 'stats']);
+        Route::post('/', [DashboardSymptomController::class, 'store']);
+        Route::get('{symptom}', [DashboardSymptomController::class, 'show']);
+        Route::put('{symptom}', [DashboardSymptomController::class, 'update']);
+        Route::delete('{symptom}', [DashboardSymptomController::class, 'destroy']);
+    });
+
+    Route::prefix('search-histories')->group(function () {
+        Route::get('/', [SearchHistoryController::class, 'adminIndex']);
+        Route::get('/trending', [SearchHistoryController::class, 'trending']);
+    });
+
+    Route::prefix('stories')->name('stories.')->group(function () {
+        Route::get('/', [DashboardStoryController::class, 'index'])->name('index');
+        Route::get('/trash', [DashboardStoryController::class, 'trash'])->name('trash');
+        Route::get('/stats', [DashboardStoryController::class, 'stats'])->name('stats');
+        Route::get('/{story}', [DashboardStoryController::class, 'show'])->name('show');
+        Route::patch('/{story}/status', [DashboardStoryController::class, 'updateStatus'])->name('update-status');
+        Route::delete('/{story}', [DashboardStoryController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/restore', [DashboardStoryController::class, 'restore'])->name('restore');
+        Route::delete('/{id}/force', [DashboardStoryController::class, 'forceDelete'])->name('force-delete');
+    });
+
+    // Donations
+    Route::prefix('donations')->name('donations.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\Dashboard\DonationController::class, 'index'])->name('index');
+        Route::get('{donation}', [App\Http\Controllers\Api\Dashboard\DonationController::class, 'show'])->name('show');
+    });
+
+    // Payments
+    Route::prefix('payments')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\Dashboard\PaymentController::class, 'index']);
+    });
+
+    // Invoices
+    Route::prefix('invoices')->group(function () {
+        Route::get('/', [InvoiceController::class, 'index']);
+    });
 });
 
 // =============================================================================
 // UNIFIED APPOINTMENT ROUTES
 // =============================================================================
-// Accessible by: admins, facility owners, and staff (authorization handled in service)
+
 Route::middleware(['auth:sanctum'])->prefix('dashboard')->name('dashboard.')->group(function () {
     Route::prefix('appointments')->name('appointments.')->group(function () {
         Route::get('/', [AppointmentController::class, 'index'])->name('index');
@@ -292,20 +456,14 @@ Route::middleware(['auth:sanctum'])->prefix('dashboard')->name('dashboard.')->gr
         Route::get('/stats', [AppointmentController::class, 'stats'])->name('stats');
         Route::get('/calendar', [AppointmentController::class, 'calendar'])->name('calendar');
         Route::get('/analytics', [AppointmentController::class, 'analytics'])->name('analytics');
-
-        // Route::get('/{appointment}', [AppointmentController::class, 'show'])->name('show');
-        // Route::put('/{appointment}', [AppointmentController::class, 'update'])->name('update');
-        // Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])->name('destroy');
-        // Route::post('/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('cancel');
-        // Route::post('/{appointment}/reschedule', [AppointmentController::class, 'reschedule'])->name('reschedule');
-        // Route::post('/{appointment}/restore', [AppointmentController::class, 'restore'])->name('restore');
-        // Route::post('/{appointment}/force-complete', [AppointmentController::class, 'forceComplete'])->name('force-complete');
     });
+
     Route::get('facility/{facility}/appointments/stats', [FacilityAppointmentController::class, 'stats']);
     Route::get('facility/{facility}/patients', [FacilityPatientController::class, 'index']);
     Route::get('/reviews', [StaffReviewController::class, 'index']);
     Route::post('/reviews/{review}/reply', [StaffReviewController::class, 'reply']);
     Route::get('/facility/{facility}/medicine/lookup', [FacilityMedicineController::class, 'getAllMedicine']);
+    Route::get('/facility/{facility}/staff-lookup', StaffLookupController::class);
     Route::get('/facility/{facility}/appointments/lookup', [FacilityAppointmentController::class, 'lookup']);
     Route::get('/facility/{facility}/medicine/stats', [FacilityMedicineController::class, 'stats']);
 
@@ -316,8 +474,9 @@ Route::middleware(['auth:sanctum'])->prefix('dashboard')->name('dashboard.')->gr
     Route::apiResource('facility.appointments', FacilityAppointmentController::class);
     Route::apiResource('facility.prescriptions', StaffPrescriptionController::class)->only(['index', 'store', 'show']);
     Route::apiResource('facility.medicine', FacilityMedicineController::class);
-
 });
+
+Route::apiResource('facility.staff', FacilityStaffController::class);
 
 Route::middleware(['auth:sanctum', 'dashboard.access:admin'])->prefix('admin')->group(function () {
     Route::get('/contact-messages', [AdminContactMessageController::class, 'index']);
@@ -329,6 +488,34 @@ Route::middleware(['auth:sanctum', 'dashboard.access:admin'])->prefix('admin')->
 // FACILITY OWNER ROUTES
 // =============================================================================
 
+Route::prefix('facility/{facility}')
+    ->middleware(['auth:sanctum'])
+    ->group(function () {
+        Route::apiResource('staff-schedules', FacilityStaffScheduleController::class);
+    });
+Route::prefix('facility/{facility}')
+    ->group(function () {
+
+        Route::get(
+            'staff-unavailabilities',
+            [StaffUnavailabilityController::class, 'index']
+        );
+
+        Route::get(
+            'staff-unavailabilities/{staffUnavailability}',
+            [StaffUnavailabilityController::class, 'show']
+        );
+
+        Route::patch(
+            'staff-unavailabilities/{staffUnavailability}/approve',
+            [StaffUnavailabilityController::class, 'approve']
+        );
+
+        Route::patch(
+            'staff-unavailabilities/{staffUnavailability}/reject',
+            [StaffUnavailabilityController::class, 'reject']
+        );
+    });
 Route::middleware(['auth:sanctum', 'dashboard.access:facility'])->prefix('facility')->group(function () {
     // Dashboard
     Route::middleware('permission:facility_dashboard.view')->group(function () {
@@ -342,18 +529,11 @@ Route::middleware(['auth:sanctum', 'dashboard.access:facility'])->prefix('facili
         Route::get('/staff', [FacilityDashboardController::class, 'staff']);
     });
 
-    // Profile
-    Route::middleware('permission:profile.view')->get('/profile', [FacilityProfileController::class, 'show']);
-    Route::middleware('permission:profile.update')->put('/profile', [FacilityProfileController::class, 'update']);
-
     // Patients
     Route::middleware('permission:patients.view')->group(function () {
         Route::get('/patients', [FacilityPatientController::class, 'index']);
         Route::get('/patients/{patient}', [FacilityPatientController::class, 'show']);
     });
-
-    // Medicines
-    // Route::middleware('permission:medicines.view')->get('/medicines', [FacilityMedicineController::class, 'index']);
 
     // Reviews
     Route::middleware('permission:reviews.view')
@@ -364,13 +544,52 @@ Route::middleware(['auth:sanctum', 'dashboard.access:facility'])->prefix('facili
         ->post('/reviews/{review}/reject', [FacilityPortalReviewController::class, 'reject']);
 
     // Articles
-    Route::middleware('permission:articles.view')
-        ->get('/articles', [FacilityArticleController::class, 'index']);
+    // Route::middleware('permission:articles.view')
+    //     ->get('/articles', [FacilityArticleController::class, 'index']);
+
+    // Job Posts
+    Route::middleware('')
+        ->prefix('{facility}/job-posts')
+        ->group(function () {
+            require base_path('routes/api/facility/job-posts.php');
+        });
+
+    // Symptoms
+    Route::middleware('permission:symptoms.view')
+        ->get('/symptoms', [FacilitySymptomController::class, 'index']);
+
+    // Search Histories
+    Route::prefix('search-histories')->group(function () {
+        Route::get('/', [SearchHistoryController::class, 'adminIndex']);
+    });
 
     // Notifications
     Route::middleware('permission:notifications.view')
         ->get('/notifications', [FacilityNotificationController::class, 'index']);
 });
+
+// =============================================================================
+// PATIENT AI CONSULTATION
+// =============================================================================
+
+Route::middleware(['auth:sanctum'])
+    ->prefix('patient/ai')
+    ->name('patient.ai.')
+    ->group(function () {
+        Route::post('/consultation', [AiConsultationController::class, 'consult'])->name('consult');
+        Route::get('/consultations', [AiConsultationController::class, 'history'])->name('history');
+    });
+
+// =============================================================================
+// AI ASSISTANT
+// =============================================================================
+
+Route::middleware(['auth:sanctum', 'dashboard.access:admin'])
+    ->prefix('dashboard/ai')
+    ->name('dashboard.ai.')
+    ->group(function () {
+        Route::post('/ask', [AiController::class, 'ask'])->name('ask');
+    });
 
 // =============================================================================
 // PATIENT PRESCRIPTIONS
@@ -383,63 +602,62 @@ Route::middleware(['auth:sanctum'])
         Route::get('/prescriptions/{prescription}', [PatientPrescriptionController::class, 'show']);
         Route::post('/prescriptions/{prescription}/select-pharmacy', [PatientPrescriptionController::class, 'selectPharmacy']);
         Route::get('/prescriptions/{prescription}/pharmacies', [PatientPrescriptionController::class, 'availablePharmacies']);
-        Route::get('/prescriptions/{prescription}/pharmacies', [PatientPrescriptionController::class, 'availablePharmacies']);
         Route::get('/medication-requests', [MedicationRequestController::class, 'index']);
         Route::get('/medication-requests/{uuid}', [MedicationRequestController::class, 'show']);
         Route::patch('/medication-requests/{uuid}/cancel', [MedicationRequestController::class, 'cancel']);
     });
 
 // =============================================================================
-// STAFF PRESCRIPTIONS (Doctors & Pharmacists)
-// =============================================================================
-
-// Route::middleware(['auth:sanctum', 'dashboard.access:doctor'])
-//     ->prefix('staff')
-//     ->group(function () {
-//         Route::get('/prescriptions', [StaffPrescriptionController::class, 'index']);
-//         Route::post('/prescriptions', [StaffPrescriptionController::class, 'store']);
-//         Route::get('/prescriptions/{prescription}', [StaffPrescriptionController::class, 'show']);
-//     });
-
-// Route::middleware(['auth:sanctum', 'dashboard.access:facility'])
-//     ->prefix('staff')
-//     ->group(function () {
-//         Route::middleware('permission:medication_requests.view')
-//             ->get('/medication-requests', [StaffPrescriptionController::class, 'medicationRequests']);
-//         Route::middleware('permission:medication_requests.approve')
-//             ->post('/medication-requests/{medicationRequest}/accept', [StaffPrescriptionController::class, 'acceptRequest']);
-//         Route::middleware('permission:medication_requests.reject')
-//             ->post('/medication-requests/{medicationRequest}/reject', [StaffPrescriptionController::class, 'rejectRequest']);
-//         Route::middleware('permission:medication_requests.approve')
-//             ->post('/medication-requests/{medicationRequest}/dispense', [StaffPrescriptionController::class, 'dispenseRequest']);
-//     });
-
-// =============================================================================
-// ADMIN PRESCRIPTIONS (Super Admin)
+// SUPER ADMIN DASHBOARD & REPORTS
 // =============================================================================
 
 Route::middleware(['auth:sanctum', 'dashboard.access:admin'])
-    ->prefix('admin')
+    ->prefix('dashboard')
+    ->name('admin.dashboard.')
     ->group(function () {
-        // Route::get('/medicines', [AdminPrescriptionController::class, 'medicinesIndex']);
-        // Route::post('/medicines', [AdminPrescriptionController::class, 'medicinesStore']);
-        // Route::get('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesShow']);
-        // Route::put('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesUpdate']);
-        // Route::delete('/medicines/{medicine}', [AdminPrescriptionController::class, 'medicinesDestroy']);
-
+        Route::get('dashboard', DashboardController::class)->name('overview');
+        Route::get('reports', [DashboardReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export/excel', [DashboardReportController::class, 'exportExcel'])->name('reports.export.excel');
+        Route::get('reports/export/pdf', [DashboardReportController::class, 'exportPdf'])->name('reports.export.pdf');
     });
 
 // =============================================================================
-// FACILITY OWNER PRESCRIPTIONS
+// SUPER ADMIN - SYSTEM LEVEL
 // =============================================================================
 
-// Route::middleware(['auth:sanctum', 'dashboard.access:facility'])
-//     ->prefix('facility-owner')
-//     ->group(function () {
-//         Route::middleware('permission:prescriptions.view')
-//             ->get('/prescriptions', [FacilityOwnerPrescriptionController::class, 'prescriptions']);
-//         Route::middleware('permission:medication_requests.view')
-//             ->get('/medication-requests', [FacilityOwnerPrescriptionController::class, 'medicationRequests']);
-//         Route::middleware('permission:analytics.view')
-//             ->get('/prescriptions/analytics', [FacilityOwnerPrescriptionController::class, 'analytics']);
-//     });
+Route::middleware(['auth:sanctum', 'dashboard.access:admin'])
+    ->prefix('dashboard')
+    ->name('api.system.')
+    ->group(function () {
+        Route::get('users/trashed', [SuperAdminUsersController::class, 'trashed'])->name('users.trashed');
+        Route::patch('users/{user}/toggle-status', [SuperAdminUsersController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::post('users/{uuid}/restore', [SuperAdminUsersController::class, 'restore'])->name('users.restore');
+        Route::apiResource('users', SuperAdminUsersController::class);
+        Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    });
+
+// =============================================================================
+// FACILITY OWNER - DASHBOARD & REPORTS
+// =============================================================================
+
+Route::middleware(['auth:sanctum', 'dashboard.access:facility'])
+    ->prefix('facility')
+    ->name('facility.')
+    ->group(function () {
+        Route::get('dashboard', FacilityDashboardController::class)->name('overview');
+        Route::get('reports', [FacilityReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export/excel', [FacilityReportController::class, 'exportExcel'])->name('reports.export.excel');
+        Route::get('reports/export/pdf', [FacilityReportController::class, 'exportPdf'])->name('reports.export.pdf');
+    });
+
+// =============================================================================
+// FACILITY OWNER - FACILITY LEVEL
+// =============================================================================
+
+Route::middleware(['auth:sanctum', 'dashboard.access:facility'])
+    ->prefix('facility')
+    ->name('api.facility.')
+    ->group(function () {
+        Route::get('{facility}/users', [FacilityUsersController::class, 'index'])->name('users.index');
+        Route::get('{facility}/users/{user}', [FacilityUsersController::class, 'show'])->name('users.show');
+    });
