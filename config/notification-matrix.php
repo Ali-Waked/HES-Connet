@@ -21,8 +21,8 @@ return [
 
     // Appointments
     'appointment.created' => [
-        'patient' => ['database'],
-        'doctor' => ['database'],
+        'patient' => ['database', 'mail', 'broadcast'],
+        'doctor' => ['database', 'broadcast'],
     ],
     'appointment.confirmed' => [
         'patient' => ['database'],
