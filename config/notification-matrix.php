@@ -1,159 +1,219 @@
 <?php
 
 return [
-    'user.logged_in' => [
-        'owner' => ['database', 'broadcast'],
-    ],
-
+    // Authentication
     'user.registered' => [
-        'owner' => ['database', 'mail'],
-        'admin' => ['database', 'broadcast'],
-    ],
-
-    'article.created' => [
-        'admin' => ['database', 'broadcast'],
-        'author' => ['database', 'mail'],
-    ],
-
-    'article.approved' => [
-        'admin' => ['database'],
-        'author' => ['database', 'mail'],
-    ],
-
-    'article.rejected' => [
-        'admin' => ['database'],
-        'author' => ['database', 'mail'],
-    ],
-
-    'story.created' => [
-        'admin' => ['database', 'broadcast'],
-        'patient' => ['database', 'mail'],
-    ],
-
-    'story.approved' => [
-        'admin' => ['database'],
-        'patient' => ['database', 'mail'],
-    ],
-
-    'job.posted' => [
-        'admin' => ['database', 'broadcast'],
-    ],
-
-    'comment.added' => [
-        'owner' => ['database', 'mail'],
+        'owner' => ['database'],
         'admin' => ['database'],
     ],
-
-    'donation.completed.donor' => [
-        'donor' => ['database', 'mail'],
+    'user.logged_in' => [
+        'owner' => ['database'],
+    ],
+    'email.verified' => [
+        'owner' => ['database'],
+    ],
+    'password.reset' => [
+        'owner' => ['database'],
+    ],
+    'password.changed' => [
+        'owner' => ['database'],
     ],
 
-    'donation.completed.patient' => [
-        'patient' => ['database', 'mail', 'broadcast'],
+    // Appointments
+    'appointment.created' => [
+        'patient' => ['database'],
+        'doctor' => ['database'],
+    ],
+    'appointment.confirmed' => [
+        'patient' => ['database'],
+        'doctor' => ['database'],
+    ],
+    'appointment.cancelled' => [
+        'patient' => ['database'],
+        'doctor' => ['database'],
+    ],
+    'appointment.completed' => [
+        'patient' => ['database'],
+        'doctor' => ['database'],
+    ],
+    'appointment.rescheduled' => [
+        'patient' => ['database'],
+        'doctor' => ['database'],
+    ],
+    'appointment.reminder_24h' => [
+        'patient' => ['database'],
+    ],
+    'appointment.reminder_1h' => [
+        'patient' => ['database'],
+    ],
+    'appointment.no_show' => [
+        'doctor' => ['database'],
     ],
 
-    'donation.completed.admin' => [
-        'admin' => ['database'],
+    // Doctors / Staff
+    'doctor.approved' => [
+        'doctor' => ['database'],
     ],
-
-    'donation.made' => [
-        'admin' => ['database'],
-    ],
-
-    'staff.assigned' => [
-        'staff' => ['database', 'mail', 'broadcast'],
-        'facility_admins' => ['database'],
-    ],
-
-    'staff.unassigned' => [
-        'staff' => ['database', 'mail', 'broadcast'],
-        'facility_admins' => ['database'],
-    ],
-
-    'category.created' => [
-        'admin' => ['database', 'broadcast'],
-    ],
-    'category.updated' => [
-        'admin' => ['database'],
-    ],
-    'category.deleted' => [
-        'admin' => ['database'],
-    ],
-    'tag.created' => [
-        'admin' => ['database', 'broadcast'],
-    ],
-    'tag.updated' => [
-        'admin' => ['database'],
-    ],
-    'tag.deleted' => [
-        'admin' => ['database'],
-    ],
-    'symptom.created' => [
-        'admin' => ['database', 'broadcast'],
-    ],
-    'symptom.updated' => [
-        'admin' => ['database'],
-    ],
-    'symptom.deleted' => [
-        'admin' => ['database'],
-    ],
-    'facility.reviewed' => [
-        'admin' => ['database', 'broadcast'],
-        'facility_admin' => ['database'],
+    'doctor.rejected' => [
+        'doctor' => ['database'],
     ],
     'doctor.reviewed' => [
-        'admin' => ['database', 'broadcast'],
-        'doctor' => ['database', 'mail'],
+        'doctor' => ['database'],
+        'admin' => ['database'],
     ],
-    'platform.review.submitted' => [
-        'admin' => ['database', 'broadcast'],
+    'staff.assigned' => [
+        'staff' => ['database'],
+        'facility_admins' => ['database'],
     ],
-    'platform.review.replied' => [
-        'owner' => ['database', 'mail'],
+    'staff.unassigned' => [
+        'staff' => ['database'],
+        'facility_admins' => ['database'],
     ],
+    'unavailability.approved' => [
+        'staff' => ['database'],
+    ],
+    'unavailability.rejected' => [
+        'staff' => ['database'],
+    ],
+
+    // Patients
     'review.replied' => [
-        'patient' => ['database', 'mail'],
-    ],
-    'appointment.created' => [
-        'patient' => ['database', 'mail'],
-        'doctor' => ['database', 'broadcast'],
-    ],
-    'appointment.status_changed' => [
-        'patient' => ['database', 'mail'],
-        'doctor' => ['database', 'broadcast'],
+        'patient' => ['database'],
     ],
     'prescription.created' => [
-        'patient' => ['database', 'mail'],
+        'patient' => ['database'],
+    ],
+    'prescription.status_changed' => [
+        'patient' => ['database'],
     ],
     'medicine.request.created' => [
-        'pharmacist' => ['database', 'broadcast'],
+        'patient' => ['database'],
+        'pharmacist' => ['database'],
         'admin' => ['database'],
     ],
     'medicine.request.status_changed' => [
-        'patient' => ['database', 'mail'],
+        'patient' => ['database'],
         'pharmacist' => ['database'],
     ],
-    'story.rejected' => [
-        'patient' => ['database', 'mail'],
+
+    // Facilities
+    'facility.registered' => [
         'admin' => ['database'],
     ],
-    'job.approved' => [
-        'owner' => ['database', 'mail'],
+    'facility.approved' => [
+        'owner' => ['database'],
+        'admin' => ['database'],
     ],
-    'job.rejected' => [
-        'owner' => ['database', 'mail'],
+    'facility.rejected' => [
+        'owner' => ['database'],
+        'admin' => ['database'],
     ],
+    'facility.suspended' => [
+        'owner' => ['database'],
+        'admin' => ['database'],
+    ],
+    'facility.reviewed' => [
+        'facility_admin' => ['database'],
+        'admin' => ['database'],
+    ],
+
+    // Platform Reviews
+    'platform.review.submitted' => [
+        'admin' => ['database'],
+        'owner' => ['database'],
+    ],
+    'platform.review.replied' => [
+        'owner' => ['database'],
+    ],
+
+    // Content
+    'article.created' => [
+        'admin' => ['database'],
+        'author' => ['database'],
+    ],
+    'article.approved' => [
+        'author' => ['database'],
+    ],
+    'article.rejected' => [
+        'author' => ['database'],
+    ],
+    'comment.added' => [
+        'owner' => ['database'],
+    ],
+    'story.created' => [
+        'admin' => ['database'],
+        'patient' => ['database'],
+    ],
+    'story.approved' => [
+        'patient' => ['database'],
+    ],
+    'story.rejected' => [
+        'patient' => ['database'],
+    ],
+
+    // Donations & Payments
     'donation.created' => [
         'admin' => ['database'],
     ],
-    'invoice.generated' => [
-        'owner' => ['database', 'mail'],
+    'donation.made' => [
+        'admin' => ['database'],
+    ],
+    'donation.completed' => [
+        'donor' => ['database'],
+        'patient' => ['database'],
+        'admin' => ['database'],
     ],
     'payment.processed' => [
-        'admin' => ['database', 'broadcast'],
+        'admin' => ['database'],
+    ],
+    'payment.failed' => [
+        'admin' => ['database'],
+    ],
+    'invoice.generated' => [
+        'owner' => ['database'],
     ],
 
+    // Jobs
+    'job.posted' => [
+        'admin' => ['database'],
+    ],
+    'job.approved' => [
+        'owner' => ['database'],
+    ],
+    'job.rejected' => [
+        'owner' => ['database'],
+    ],
+
+    // Contact
+    'contact.submitted' => [
+        'admin' => ['database'],
+    ],
+
+    // AI
     'ai.prompted' => [
         'admin' => ['database'],
+    ],
+    'ai.conversation_completed' => [
+        'patient' => ['database'],
+    ],
+    'ai.recommendation_available' => [
+        'patient' => ['database'],
+    ],
+
+    // System
+    'subscription.created' => [
+        'owner' => ['database'],
+    ],
+    'subscription.expiring' => [
+        'owner' => ['database'],
+    ],
+    'system.maintenance' => [
+        'admin' => ['database'],
+    ],
+    'system.version' => [
+        'admin' => ['database'],
+    ],
+    'system.broadcast' => [
+        'all' => ['database'],
     ],
 ];

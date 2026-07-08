@@ -25,7 +25,7 @@ class NotifyStoryApproved
         $patient = $this->resolver->storyOwner($story);
         if ($patient) {
             $patient->notify(
-                StoryApprovedNotification::forPatient($story, $patient->locale ?? $locale),
+                StoryApprovedNotification::forPatient($story, $patient->locale?->value ?? $locale),
             );
         }
 
@@ -33,7 +33,7 @@ class NotifyStoryApproved
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                StoryApprovedNotification::forAdmin($story, $admin->locale ?? $locale),
+                StoryApprovedNotification::forAdmin($story, $admin->locale?->value ?? $locale),
             );
         }
 

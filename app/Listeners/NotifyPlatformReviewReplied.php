@@ -24,7 +24,7 @@ class NotifyPlatformReviewReplied
         $owner = $platformReview->user;
         if ($owner) {
             $owner->notify(
-                PlatformReviewRepliedNotification::forOwner($platformReview, $owner->locale ?? $locale),
+                PlatformReviewRepliedNotification::forOwner($platformReview, $owner->locale?->value ?? $locale),
             );
         }
 

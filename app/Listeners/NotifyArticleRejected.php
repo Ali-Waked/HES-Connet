@@ -25,7 +25,7 @@ class NotifyArticleRejected
         $author = $this->resolver->articleAuthor($article);
         if ($author) {
             $author->notify(
-                ArticleRejectedNotification::forAuthor($article, $author->locale ?? $locale),
+                ArticleRejectedNotification::forAuthor($article, $author->locale?->value ?? $locale),
             );
         }
 
@@ -33,7 +33,7 @@ class NotifyArticleRejected
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                ArticleRejectedNotification::forAdmin($article, $admin->locale ?? $locale),
+                ArticleRejectedNotification::forAdmin($article, $admin->locale?->value ?? $locale),
             );
         }
 

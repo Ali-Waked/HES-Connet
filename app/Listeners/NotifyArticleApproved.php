@@ -25,7 +25,7 @@ class NotifyArticleApproved
         $author = $this->resolver->articleAuthor($article);
         if ($author) {
             $author->notify(
-                ArticleApprovedNotification::forAuthor($article, $author->locale ?? $locale),
+                ArticleApprovedNotification::forAuthor($article, $author->locale?->value ?? $locale),
             );
         }
 
@@ -33,7 +33,7 @@ class NotifyArticleApproved
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                ArticleApprovedNotification::forAdmin($article, $admin->locale ?? $locale),
+                ArticleApprovedNotification::forAdmin($article, $admin->locale?->value ?? $locale),
             );
         }
 

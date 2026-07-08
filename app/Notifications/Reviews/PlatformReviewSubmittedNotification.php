@@ -18,7 +18,22 @@ class PlatformReviewSubmittedNotification extends BaseNotification
                 'user' => $platformReview->user?->name ?? 'A user',
                 'rating' => $platformReview->rating,
                 'action_text' => 'View Review',
-                'action_url' => route('dashboard.platform-reviews.show', $platformReview),
+                'action_url' => route('platform-reviews.show', $platformReview),
+            ],
+            locale: $locale,
+        );
+    }
+
+    public static function forOwner(PlatformReview $platformReview, ?string $locale = null): static
+    {
+        return new static(
+            event: 'platform.review.submitted',
+            role: 'owner',
+            data: [
+                'user' => $platformReview->user?->name ?? 'You',
+                'rating' => $platformReview->rating,
+                'action_text' => 'View Review',
+                'action_url' => route('platform-reviews.show', $platformReview),
             ],
             locale: $locale,
         );

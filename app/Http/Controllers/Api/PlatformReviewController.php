@@ -21,16 +21,11 @@ class PlatformReviewController extends Controller
 
     public function myReview(Request $request): JsonResponse
     {
-        $review = PlatformReview::where('user_id', $request->user()->id)->first();
-
-        if (! $review) {
-            return response()->json([
-                'data' => null,
-            ]);
-        }
+        $result = $this->platform_review_service->myReview($request->user());
 
         return response()->json([
-            'data' => new PlatformReviewResource($review->load('user')),
+            'message' => __('Review retrieved successfully.'),
+            ...$result,
         ]);
     }
 
@@ -38,20 +33,21 @@ class PlatformReviewController extends Controller
     {
         $user = $request->user();
 
+        $eligibility = $this->platform_review_service->canUserReview($user);
+
+        if (! $eligibility['can_review']) {
+            return response()->json([
+                'message' => __('You are not eligible to submit a review.'),
+            ], 403);
+        }
+
         if (PlatformReview::where('user_id', $user->id)->exists()) {
             return response()->json([
                 'message' => __('You have already submitted a review.'),
-                'errors' => ['review' => [__('You can only create one review.')]],
-            ], 422);
+            ], 409);
         }
 
-        $review = $this->platform_review_service->create([
-            'user_id' => $user->id,
-            'rating' => $request->input('rating'),
-            'comment' => $request->input('comment'),
-            'status' => 'pending',
-            'is_featured' => false,
-        ]);
+        $review = $this->platform_review_service->store($user, $request->validated());
 
         return response()->json([
             'message' => __('Review submitted successfully.'),
@@ -63,6 +59,14 @@ class PlatformReviewController extends Controller
     {
         $user = $request->user();
 
+        $eligibility = $this->platform_review_service->canUserReview($user);
+
+        if (! $eligibility['can_review']) {
+            return response()->json([
+                'message' => __('You are not eligible to update a review.'),
+            ], 403);
+        }
+
         $review = PlatformReview::where('user_id', $user->id)->first();
 
         if (! $review) {
@@ -71,15 +75,11 @@ class PlatformReviewController extends Controller
             ], 404);
         }
 
-        $review = $this->platform_review_service->update($review, [
-            'rating' => $request->input('rating', $review->rating),
-            'comment' => $request->input('comment', $review->comment),
-            'status' => 'pending',
-        ]);
+        $review->update($request->validated());
 
         return response()->json([
             'message' => __('Review updated successfully.'),
-            'data' => new PlatformReviewResource($review),
+            'data' => new PlatformReviewResource($review->fresh()->load('repliedBy')),
         ]);
     }
 

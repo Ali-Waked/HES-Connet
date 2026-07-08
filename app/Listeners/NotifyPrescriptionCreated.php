@@ -24,7 +24,7 @@ class NotifyPrescriptionCreated
         $patient = $prescription->appointment?->patient?->user;
         if ($patient) {
             $patient->notify(
-                PrescriptionCreatedNotification::forPatient($prescription, $patient->locale ?? $locale),
+                PrescriptionCreatedNotification::forPatient($prescription, $patient->locale?->value ?? $locale),
             );
         }
 

@@ -27,7 +27,7 @@ class NotifyDonationMade
                     donorName: $event->donorName,
                     amount: $event->amount,
                     campaign: $event->campaign,
-                    locale: $admin->locale ?? $locale,
+                    locale: $admin->locale?->value ?? $locale,
                 ),
             );
         }

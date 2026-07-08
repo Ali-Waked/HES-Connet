@@ -16,7 +16,7 @@ class NotifyUserLogin
 
     public function handle(UserLoggedIn $event): void
     {
-        $locale = $event->user->locale ?? app()->getLocale();
+        $locale = $event->user->locale?->value ?? app()->getLocale();
 
         $event->user->notify(
             UserLoggedInNotification::forOwner($event->user, $locale),

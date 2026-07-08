@@ -25,7 +25,7 @@ class NotifyStaffAssigned
         $staffUser = $this->resolver->staffUser($facilityStaff);
         if ($staffUser) {
             $staffUser->notify(
-                StaffAssignedNotification::forStaff($facilityStaff, $staffUser->locale ?? $locale),
+                StaffAssignedNotification::forStaff($facilityStaff, $staffUser->locale?->value ?? $locale),
             );
         }
 
@@ -33,7 +33,7 @@ class NotifyStaffAssigned
         $facilityAdmins = $this->resolver->facilityAdmins($facilityStaff);
         foreach ($facilityAdmins as $admin) {
             $admin->notify(
-                StaffAssignedNotification::forFacilityAdmins($facilityStaff, $admin->locale ?? $locale),
+                StaffAssignedNotification::forFacilityAdmins($facilityStaff, $admin->locale?->value ?? $locale),
             );
         }
 

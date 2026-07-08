@@ -24,7 +24,7 @@ class NotifyCategoryDeleted
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                CategoryDeletedNotification::forAdmin($category, $admin->locale ?? $locale),
+                CategoryDeletedNotification::forAdmin($category, $admin->locale?->value ?? $locale),
             );
         }
 

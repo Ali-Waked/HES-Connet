@@ -24,7 +24,7 @@ class NotifyCategoryUpdated
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                CategoryUpdatedNotification::forAdmin($category, $admin->locale ?? $locale),
+                CategoryUpdatedNotification::forAdmin($category, $admin->locale?->value ?? $locale),
             );
         }
 

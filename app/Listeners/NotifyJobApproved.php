@@ -24,7 +24,7 @@ class NotifyJobApproved
         $creator = $this->resolver->jobPostCreator($jobPost);
         if ($creator) {
             $creator->notify(
-                JobApprovedNotification::forOwner($jobPost, $creator->locale ?? $locale),
+                JobApprovedNotification::forOwner($jobPost, $creator->locale?->value ?? $locale),
             );
         }
 

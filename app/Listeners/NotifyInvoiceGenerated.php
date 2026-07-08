@@ -25,7 +25,7 @@ class NotifyInvoiceGenerated
         $owner = $payable?->donor ?? $payable?->user ?? null;
         if ($owner) {
             $owner->notify(
-                InvoiceGeneratedNotification::forOwner($invoice, $owner->locale ?? $locale),
+                InvoiceGeneratedNotification::forOwner($invoice, $owner->locale?->value ?? $locale),
             );
         }
 

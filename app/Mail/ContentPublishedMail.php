@@ -74,7 +74,7 @@ class ContentPublishedMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.content_published',
+            view: 'emails.content_published',
             with: [
                 'type' => $this->type,
                 'title' => $this->title,

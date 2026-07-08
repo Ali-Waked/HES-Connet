@@ -24,7 +24,7 @@ class NotifyReviewReplied
         $patient = $reviewReply->review?->patient?->user;
         if ($patient) {
             $patient->notify(
-                ReviewRepliedNotification::forPatient($reviewReply, $patient->locale ?? $locale),
+                ReviewRepliedNotification::forPatient($reviewReply, $patient->locale?->value ?? $locale),
             );
         }
 

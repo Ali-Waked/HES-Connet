@@ -18,7 +18,7 @@ class NotifyUserRegistered
 
     public function handle(UserRegistered $event): void
     {
-        $locale = $event->user->locale ?? app()->getLocale();
+        $locale = $event->user->locale?->value ?? app()->getLocale();
 
         // Notify the user themselves
         $event->user->notify(

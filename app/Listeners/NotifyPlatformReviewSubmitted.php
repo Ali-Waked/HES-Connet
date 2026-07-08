@@ -24,7 +24,14 @@ class NotifyPlatformReviewSubmitted
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                PlatformReviewSubmittedNotification::forAdmin($platformReview, $admin->locale ?? $locale),
+                PlatformReviewSubmittedNotification::forAdmin($platformReview, $admin->locale?->value ?? $locale),
+            );
+        }
+
+        $owner = $platformReview->user;
+        if ($owner) {
+            $owner->notify(
+                PlatformReviewSubmittedNotification::forOwner($platformReview, $owner->locale?->value ?? $locale),
             );
         }
 

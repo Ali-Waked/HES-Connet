@@ -25,7 +25,7 @@ class NotifyCommentAdded
         $owner = $this->resolver->commentContentOwner($comment);
         if ($owner && $owner->id !== $comment->user_id) {
             $owner->notify(
-                CommentAddedNotification::forOwner($comment, $owner->locale ?? $locale),
+                CommentAddedNotification::forOwner($comment, $owner->locale?->value ?? $locale),
             );
         }
 
@@ -33,7 +33,7 @@ class NotifyCommentAdded
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                CommentAddedNotification::forAdmin($comment, $admin->locale ?? $locale),
+                CommentAddedNotification::forAdmin($comment, $admin->locale?->value ?? $locale),
             );
         }
 

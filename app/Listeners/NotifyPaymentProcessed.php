@@ -24,7 +24,7 @@ class NotifyPaymentProcessed
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                PaymentProcessedNotification::forAdmin($payment, $admin->locale ?? $locale),
+                PaymentProcessedNotification::forAdmin($payment, $admin->locale?->value ?? $locale),
             );
         }
 

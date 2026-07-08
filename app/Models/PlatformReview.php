@@ -9,6 +9,7 @@ use App\Traits\Auditable;
 use Database\Factories\PlatformReviewFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,11 @@ class PlatformReview extends Model
             'replied_at' => 'datetime',
             'status' => PlatformReviewStatus::class,
         ];
+    }
+
+    public function editable(): Attribute
+    {
+        return Attribute::get(fn () => $this->status->isEditable());
     }
 
     public function user(): BelongsTo

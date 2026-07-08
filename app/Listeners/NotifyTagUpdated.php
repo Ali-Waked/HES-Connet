@@ -24,7 +24,7 @@ class NotifyTagUpdated
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                TagUpdatedNotification::forAdmin($tag, $admin->locale ?? $locale),
+                TagUpdatedNotification::forAdmin($tag, $admin->locale?->value ?? $locale),
             );
         }
 

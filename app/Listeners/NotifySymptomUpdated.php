@@ -24,7 +24,7 @@ class NotifySymptomUpdated
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                SymptomUpdatedNotification::forAdmin($symptom, $admin->locale ?? $locale),
+                SymptomUpdatedNotification::forAdmin($symptom, $admin->locale?->value ?? $locale),
             );
         }
 

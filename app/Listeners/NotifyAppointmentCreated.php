@@ -24,14 +24,14 @@ class NotifyAppointmentCreated
         $patient = $appointment->patient?->user;
         if ($patient) {
             $patient->notify(
-                AppointmentCreatedNotification::forPatient($appointment, $patient->locale ?? $locale),
+                AppointmentCreatedNotification::forPatient($appointment, $patient->locale?->value ?? $locale),
             );
         }
 
         $doctor = $appointment->facilityStaff?->staff?->user;
         if ($doctor) {
             $doctor->notify(
-                AppointmentCreatedNotification::forDoctor($appointment, $doctor->locale ?? $locale),
+                AppointmentCreatedNotification::forDoctor($appointment, $doctor->locale?->value ?? $locale),
             );
         }
 

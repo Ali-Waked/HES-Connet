@@ -24,14 +24,14 @@ class NotifyStoryRejected
         $patient = $this->resolver->storyOwner($story);
         if ($patient) {
             $patient->notify(
-                StoryRejectedNotification::forPatient($story, $patient->locale ?? $locale),
+                StoryRejectedNotification::forPatient($story, $patient->locale?->value ?? $locale),
             );
         }
 
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                StoryRejectedNotification::forAdmin($story, $admin->locale ?? $locale),
+                StoryRejectedNotification::forAdmin($story, $admin->locale?->value ?? $locale),
             );
         }
 

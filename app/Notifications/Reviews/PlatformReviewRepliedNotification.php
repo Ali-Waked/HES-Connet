@@ -18,7 +18,7 @@ class PlatformReviewRepliedNotification extends BaseNotification
                 'user' => $platformReview->user?->name ?? 'A user',
                 'reply' => $platformReview->reply ?? '',
                 'action_text' => 'View Review',
-                'action_url' => route('dashboard.platform-reviews.show', $platformReview),
+                'action_url' => route('platform-reviews.show', $platformReview),
             ],
             locale: $locale,
         );

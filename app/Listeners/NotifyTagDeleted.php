@@ -24,7 +24,7 @@ class NotifyTagDeleted
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                TagDeletedNotification::forAdmin($tag, $admin->locale ?? $locale),
+                TagDeletedNotification::forAdmin($tag, $admin->locale?->value ?? $locale),
             );
         }
 

@@ -24,14 +24,14 @@ class NotifyMedicineRequestCreated
         $pharmacist = $medicationRequest->pharmacist?->user;
         if ($pharmacist) {
             $pharmacist->notify(
-                MedicineRequestCreatedNotification::forPharmacist($medicationRequest, $pharmacist->locale ?? $locale),
+                MedicineRequestCreatedNotification::forPharmacist($medicationRequest, $pharmacist->locale?->value ?? $locale),
             );
         }
 
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                MedicineRequestCreatedNotification::forAdmin($medicationRequest, $admin->locale ?? $locale),
+                MedicineRequestCreatedNotification::forAdmin($medicationRequest, $admin->locale?->value ?? $locale),
             );
         }
 

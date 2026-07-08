@@ -24,14 +24,14 @@ class NotifyDoctorReviewed
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                DoctorReviewedNotification::forAdmin($review, $admin->locale ?? $locale),
+                DoctorReviewedNotification::forAdmin($review, $admin->locale?->value ?? $locale),
             );
         }
 
         $doctor = $review->appointment?->facilityStaff?->staff?->user;
         if ($doctor) {
             $doctor->notify(
-                DoctorReviewedNotification::forDoctor($review, $doctor->locale ?? $locale),
+                DoctorReviewedNotification::forDoctor($review, $doctor->locale?->value ?? $locale),
             );
         }
 

@@ -25,7 +25,7 @@ class NotifyJobPosted
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                JobPostedNotification::forAdmin($jobPost, $admin->locale ?? $locale),
+                JobPostedNotification::forAdmin($jobPost, $admin->locale?->value ?? $locale),
             );
         }
 

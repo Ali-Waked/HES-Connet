@@ -24,14 +24,14 @@ class NotifyMedicineRequestStatusChanged
         $patient = $medicationRequest->patient?->user;
         if ($patient) {
             $patient->notify(
-                MedicineRequestStatusChangedNotification::forPatient($medicationRequest, $patient->locale ?? $locale),
+                MedicineRequestStatusChangedNotification::forPatient($medicationRequest, $patient->locale?->value ?? $locale),
             );
         }
 
         $pharmacist = $medicationRequest->pharmacist?->user;
         if ($pharmacist) {
             $pharmacist->notify(
-                MedicineRequestStatusChangedNotification::forPharmacist($medicationRequest, $pharmacist->locale ?? $locale),
+                MedicineRequestStatusChangedNotification::forPharmacist($medicationRequest, $pharmacist->locale?->value ?? $locale),
             );
         }
 

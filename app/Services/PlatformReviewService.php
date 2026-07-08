@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AppointmentStatus;
+use App\Enums\PlatformReviewStatus;
 use App\Events\PlatformReviewReplied;
 use App\Events\PlatformReviewSubmitted;
 use App\Models\PlatformReview;
@@ -30,17 +32,6 @@ class PlatformReviewService
             ->paginate($perPage);
     }
 
-    public function create(array $data): PlatformReview
-    {
-        return DB::transaction(function () use ($data) {
-            $review = PlatformReview::create($data)->load('user');
-
-            event(new PlatformReviewSubmitted($review));
-
-            return $review;
-        });
-    }
-
     public function show(PlatformReview $platformReview): PlatformReview
     {
         return $platformReview->load(['user', 'repliedBy']);
@@ -65,7 +56,7 @@ class PlatformReviewService
                 'admin_reply' => $adminReply,
                 'replied_by' => $admin->id,
                 'replied_at' => now(),
-                'status' => 'published',
+                'status' => 'approved',
             ]);
 
             $review->load('user');
@@ -93,5 +84,95 @@ class PlatformReviewService
             'hidden' => (int) $stats->hidden,
             'average_rating' => round((float) $stats->average_rating, 2),
         ];
+    }
+
+    public function canUserReview(User $user): array
+    {
+        if ($patient = $user->patient) {
+            $hasCompletedAppointment = $patient->appointments()
+                ->where('status', AppointmentStatus::COMPLETED)
+                ->exists();
+
+            if (! $hasCompletedAppointment) {
+                return [
+                    'can_review' => false,
+                    'reason' => __('You need at least one completed appointment before submitting a review.'),
+                ];
+            }
+
+            return [
+                'can_review' => true,
+                'reason' => null,
+            ];
+        }
+
+        if ($staff = $user->staff) {
+            $hasCompletedAppointment = $staff->appointmentsAsDoctor()
+                ->where('status', AppointmentStatus::COMPLETED)
+                ->exists();
+
+            if (! $hasCompletedAppointment) {
+                return [
+                    'can_review' => false,
+                    'reason' => __('You need at least one completed appointment before submitting a review.'),
+                ];
+            }
+
+            return [
+                'can_review' => true,
+                'reason' => null,
+            ];
+        }
+
+        return [
+            'can_review' => false,
+            'reason' => __('Only patients and healthcare providers can submit reviews.'),
+        ];
+    }
+
+    public function myReview(User $user): array
+    {
+        $eligibility = $this->canUserReview($user);
+
+        $review = PlatformReview::where('user_id', $user->id)->first();
+
+        return [
+            'can_review' => $eligibility['can_review'],
+            'has_review' => $review !== null,
+            'reason' => $eligibility['reason'],
+            'review' => $review ? $review->load('repliedBy') : null,
+        ];
+    }
+
+    public function publicReviews(): LengthAwarePaginator
+    {
+        return PlatformReview::query()
+            ->with('user.patient')
+            ->where('status', PlatformReviewStatus::APPROVED)
+            ->orderBy('is_featured', 'desc')
+            ->latest()
+            ->paginate(15);
+    }
+
+    public function store(User $user, array $data): PlatformReview
+    {
+        return DB::transaction(function () use ($user, $data) {
+            $review = PlatformReview::create([
+                'user_id' => $user->id,
+                'rating' => $data['rating'],
+                'comment' => $data['comment'] ?? null,
+                'status' => 'pending',
+                'is_featured' => false,
+            ])->load('repliedBy');
+
+            event(new PlatformReviewSubmitted($review));
+
+            return $review;
+        });
+    }
+
+    public function destroyUserReview(User $user): void
+    {
+        PlatformReview::where('user_id', $user->id)->delete();
     }
 }

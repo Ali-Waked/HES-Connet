@@ -24,7 +24,7 @@ class NotifyJobRejected
         $creator = $this->resolver->jobPostCreator($jobPost);
         if ($creator) {
             $creator->notify(
-                JobRejectedNotification::forOwner($jobPost, $creator->locale ?? $locale),
+                JobRejectedNotification::forOwner($jobPost, $creator->locale?->value ?? $locale),
             );
         }
 

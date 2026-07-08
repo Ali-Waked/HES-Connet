@@ -24,7 +24,7 @@ class NotifyTagCreated
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                TagCreatedNotification::forAdmin($tag, $admin->locale ?? $locale),
+                TagCreatedNotification::forAdmin($tag, $admin->locale?->value ?? $locale),
             );
         }
 

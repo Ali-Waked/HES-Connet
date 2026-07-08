@@ -55,7 +55,7 @@ class SubscriptionVerificationMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.verification',
+            view: 'emails.verification',
         );
     }
 }

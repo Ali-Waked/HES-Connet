@@ -25,7 +25,7 @@ class NotifyStoryCreated
         $patient = $this->resolver->storyOwner($story);
         if ($patient) {
             $patient->notify(
-                StoryCreatedNotification::forPatient($story, $patient->locale ?? $locale),
+                StoryCreatedNotification::forPatient($story, $patient->locale?->value ?? $locale),
             );
         }
 
@@ -33,7 +33,7 @@ class NotifyStoryCreated
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                StoryCreatedNotification::forAdmin($story, $admin->locale ?? $locale),
+                StoryCreatedNotification::forAdmin($story, $admin->locale?->value ?? $locale),
             );
         }
 

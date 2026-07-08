@@ -24,14 +24,14 @@ class NotifyStaffUnassigned
         $staffUser = $this->resolver->staffUser($facilityStaff);
         if ($staffUser) {
             $staffUser->notify(
-                StaffUnassignedNotification::forStaff($facilityStaff, $staffUser->locale ?? $locale),
+                StaffUnassignedNotification::forStaff($facilityStaff, $staffUser->locale?->value ?? $locale),
             );
         }
 
         $facilityAdmins = $this->resolver->facilityAdmins($facilityStaff);
         foreach ($facilityAdmins as $admin) {
             $admin->notify(
-                StaffUnassignedNotification::forFacilityAdmins($facilityStaff, $admin->locale ?? $locale),
+                StaffUnassignedNotification::forFacilityAdmins($facilityStaff, $admin->locale?->value ?? $locale),
             );
         }
 

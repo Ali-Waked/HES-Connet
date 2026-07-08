@@ -25,7 +25,7 @@ class NotifyFacilityReviewed
         $admins = $this->resolver->admins();
         foreach ($admins as $admin) {
             $admin->notify(
-                FacilityReviewedNotification::forAdmin($facilityReview, $admin->locale ?? $locale),
+                FacilityReviewedNotification::forAdmin($facilityReview, $admin->locale?->value ?? $locale),
             );
         }
 
@@ -38,7 +38,7 @@ class NotifyFacilityReviewed
 
         foreach ($facilityAdmins as $admin) {
             $admin->notify(
-                FacilityReviewedNotification::forFacilityAdmin($facilityReview, $admin->locale ?? $locale),
+                FacilityReviewedNotification::forFacilityAdmin($facilityReview, $admin->locale?->value ?? $locale),
             );
         }
 
