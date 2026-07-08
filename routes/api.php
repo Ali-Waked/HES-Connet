@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\Dashboard\PositionController;
 use App\Http\Controllers\Api\Dashboard\PrescriptionController;
 use App\Http\Controllers\Api\Dashboard\RoleController;
 use App\Http\Controllers\Api\Dashboard\ScheduleController;
+use App\Http\Controllers\Api\Dashboard\SpecializationController;
 use App\Http\Controllers\Api\Dashboard\StaffController;
 use App\Http\Controllers\Api\Dashboard\StaffPositionController;
 use App\Http\Controllers\Api\Dashboard\StaffScheduleController;
@@ -55,7 +56,8 @@ use App\Http\Controllers\Api\Facility\SymptomController as FacilitySymptomContro
 use App\Http\Controllers\Api\Facility\UsersController as FacilityUsersController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\MedicineController;
-use App\Http\Controllers\Api\Patient\AiConsultationController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\Patient\AiConversationController;
 use App\Http\Controllers\Api\Patient\MedicationRequestController;
 use App\Http\Controllers\Api\Patient\PrescriptionController as PatientPrescriptionController;
 use App\Http\Controllers\Api\Patient\StoryController;
@@ -77,9 +79,11 @@ use App\Http\Controllers\Api\Public\PublicSubscriptionController;
 use App\Http\Controllers\Api\Public\ReviewController as PublicReviewController;
 use App\Http\Controllers\Api\Public\StoryController as PublicStoryController;
 use App\Http\Controllers\Api\Public\WebhookController;
+use App\Http\Controllers\Api\PublicPlatformReviewController;
 use App\Http\Controllers\Api\SearchHistoryController;
 use App\Http\Controllers\Api\Staff\ArticleController as StaffArticleController;
 use App\Http\Controllers\Api\Staff\AvailabilityController as StaffAvailabilityController;
+use App\Http\Controllers\Api\Staff\CalendarController;
 use App\Http\Controllers\Api\Staff\MedicationRequestController as StaffMedicationRequestController;
 use App\Http\Controllers\Api\Staff\PrescriptionController as StaffPrescriptionController;
 use App\Http\Controllers\Api\Staff\ScheduleController as StaffOwnScheduleController;
@@ -178,7 +182,9 @@ Route::post('/webhooks/stripe', [WebhookController::class, 'stripe']);
 
 Route::middleware('auth:sanctum')->get('/profile', [AuthController::class, 'profile']);
 Route::middleware('auth:sanctum')->put('/profile', [ProfileController::class, 'update']);
-Route::middleware('auth:sanctum')->prefix('platform-reviews')->group(function () {
+Route::get('/public/platform-reviews', [PublicPlatformReviewController::class, 'index']);
+
+Route::middleware('auth:sanctum')->prefix('platform-review')->group(function () {
     Route::get('/', [UserPlatformReviewController::class, 'myReview']);
     Route::post('/', [UserPlatformReviewController::class, 'store']);
     Route::put('/', [UserPlatformReviewController::class, 'update']);
@@ -260,32 +266,45 @@ Route::middleware(['auth:sanctum'])->prefix('staff')->name('staff.')->group(func
 });
 
 // Staff Schedules — view
-Route::middleware(['auth:sanctum'])->prefix('staff')->name('staff.')->group(function () {
-    Route::get('/schedules', [StaffOwnScheduleController::class, 'index'])->name('schedules.index');
-    Route::get('/{staff}/unavailability', [StaffOwnUnavailabilityController::class, 'index'])->name('unavailability.index');
-    Route::get('/{staff}/available-slots', [StaffAvailabilityController::class, 'availableSlots'])->name('available-slots');
-});
+// Route::middleware(['auth:sanctum'])->prefix('staff')->name('staff.')->group(function () {
+//     Route::get('/schedules', [StaffOwnScheduleController::class, 'index'])->name('schedules.index');
+//     Route::get('/{staff}/unavailability', [StaffOwnUnavailabilityController::class, 'index'])->name('unavailability.index');
+//     Route::get('/{staff}/available-slots', [StaffAvailabilityController::class, 'availableSlots'])->name('available-slots');
+// });
 
 // Staff Schedules — manage
-Route::middleware(['auth:sanctum'])->prefix('staff')->name('staff.')->group(function () {
-    Route::post('/schedules', [StaffOwnScheduleController::class, 'store'])->name('schedules.store');
-    Route::put('/schedules/{schedule}', [StaffOwnScheduleController::class, 'update'])->name('schedules.update');
-    Route::delete('/schedules/{schedule}', [StaffOwnScheduleController::class, 'destroy'])->name('schedules.destroy');
-    Route::post('/unavailability', [StaffOwnUnavailabilityController::class, 'store'])->name('unavailability.store');
-    Route::put('/unavailability/{unavailability}', [StaffOwnUnavailabilityController::class, 'update'])->name('unavailability.update');
-    Route::delete('/unavailability/{unavailability}', [StaffOwnUnavailabilityController::class, 'destroy'])->name('unavailability.destroy');
-});
+// Route::middleware(['auth:sanctum'])->prefix('staff')->name('staff.')->group(function () {
+//     Route::post('/schedules', [StaffOwnScheduleController::class, 'store'])->name('schedules.store');
+//     Route::put('/schedules/{schedule}', [StaffOwnScheduleController::class, 'update'])->name('schedules.update');
+//     Route::delete('/schedules/{schedule}', [StaffOwnScheduleController::class, 'destroy'])->name('schedules.destroy');
+//     Route::post('/unavailability', [StaffOwnUnavailabilityController::class, 'store'])->name('unavailability.store');
+//     Route::put('/unavailability/{unavailability}', [StaffOwnUnavailabilityController::class, 'update'])->name('unavailability.update');
+//     Route::delete('/unavailability/{unavailability}', [StaffOwnUnavailabilityController::class, 'destroy'])->name('unavailability.destroy');
+// });
+
+Route::prefix('facilities/{facility}')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+        Route::apiResource('schedules', StaffOwnScheduleController::class);
+        Route::apiResource('unavailabilities', StaffOwnUnavailabilityController::class);
+    });
 
 // Staff Facilities
 Route::middleware('auth:sanctum')->prefix('staff')->name('staff.')->group(function () {
     Route::get('/facilities', [StaffFacilityController::class, 'index'])->name('facilities.index');
 });
 
-// Staff Symptoms
+// Symptoms & Specialization Symptoms
 Route::middleware('auth:sanctum')->prefix('staff')->name('staff.')->group(function () {
     Route::get('/symptoms', [StaffSymptomController::class, 'index'])->name('symptoms.index');
-    Route::put('symptoms/{facility_staff}', [StaffSymptomController::class, 'update'])->name('symptoms.update');
 });
+
+Route::middleware('auth:sanctum')
+    ->prefix('specializations')
+    ->name('specializations.')
+    ->group(function () {
+        Route::put('{specialization}/symptoms', [StaffSymptomController::class, 'update'])->name('symptoms.update');
+    });
 
 Route::middleware(['auth:sanctum', 'dashboard.access:doctor'])
     ->prefix('doctor')
@@ -412,6 +431,19 @@ Route::middleware(['auth:sanctum', ''])->prefix('dashboard')->group(function () 
         Route::delete('{symptom}', [DashboardSymptomController::class, 'destroy']);
     });
 
+    Route::prefix('specializations')->group(function () {
+        Route::get('lookup', [SpecializationController::class, 'lookup']);
+        Route::get('/', [SpecializationController::class, 'index']);
+        Route::post('/', [SpecializationController::class, 'store']);
+        Route::get('{specialization}', [SpecializationController::class, 'show']);
+        Route::put('{specialization}', [SpecializationController::class, 'update']);
+        Route::delete('{specialization}', [SpecializationController::class, 'destroy']);
+        Route::get('{specialization}/symptoms', [SpecializationController::class, 'listSymptoms']);
+        Route::put('{specialization}/symptoms', [SpecializationController::class, 'syncSymptoms']);
+        Route::post('{specialization}/symptoms', [SpecializationController::class, 'attachSymptoms']);
+        Route::delete('{specialization}/symptoms/{symptom}', [SpecializationController::class, 'detachSymptom']);
+    });
+
     Route::prefix('search-histories')->group(function () {
         Route::get('/', [SearchHistoryController::class, 'adminIndex']);
         Route::get('/trending', [SearchHistoryController::class, 'trending']);
@@ -463,7 +495,6 @@ Route::middleware(['auth:sanctum'])->prefix('dashboard')->name('dashboard.')->gr
     Route::get('/reviews', [StaffReviewController::class, 'index']);
     Route::post('/reviews/{review}/reply', [StaffReviewController::class, 'reply']);
     Route::get('/facility/{facility}/medicine/lookup', [FacilityMedicineController::class, 'getAllMedicine']);
-    Route::get('/facility/{facility}/staff-lookup', StaffLookupController::class);
     Route::get('/facility/{facility}/appointments/lookup', [FacilityAppointmentController::class, 'lookup']);
     Route::get('/facility/{facility}/medicine/stats', [FacilityMedicineController::class, 'stats']);
 
@@ -475,13 +506,15 @@ Route::middleware(['auth:sanctum'])->prefix('dashboard')->name('dashboard.')->gr
     Route::apiResource('facility.prescriptions', StaffPrescriptionController::class)->only(['index', 'store', 'show']);
     Route::apiResource('facility.medicine', FacilityMedicineController::class);
 });
+Route::get('/facility/{facility}/staff-lookup', StaffLookupController::class);
 
 Route::apiResource('facility.staff', FacilityStaffController::class);
+Route::apiResource('facility.departments', App\Http\Controllers\Api\Facility\DepartmentController::class);
 
 Route::middleware(['auth:sanctum', 'dashboard.access:admin'])->prefix('admin')->group(function () {
-    Route::get('/contact-messages', [AdminContactMessageController::class, 'index']);
-    Route::get('/contact-messages/{contact_message}', [AdminContactMessageController::class, 'show']);
-    Route::patch('/contact-messages/{contact_message}/status', [AdminContactMessageController::class, 'updateStatus']);
+    Route::get('/contact-messages', [AdminContactMessageController::class, 'index'])->name('admin.contact-messages.index');
+    Route::get('/contact-messages/{contact_message}', [AdminContactMessageController::class, 'show'])->name('admin.contact-messages.show');
+    Route::patch('/contact-messages/{contact_message}/status', [AdminContactMessageController::class, 'updateStatus'])->name('admin.contact-messages.update-status');
 });
 
 // =============================================================================
@@ -576,8 +609,12 @@ Route::middleware(['auth:sanctum'])
     ->prefix('patient/ai')
     ->name('patient.ai.')
     ->group(function () {
-        Route::post('/consultation', [AiConsultationController::class, 'consult'])->name('consult');
-        Route::get('/consultations', [AiConsultationController::class, 'history'])->name('history');
+        Route::get('/conversations', [AiConversationController::class, 'index'])->name('conversations.index');
+        Route::post('/conversations', [AiConversationController::class, 'store'])->name('conversations.store');
+        Route::get('/conversations/{uuid}', [AiConversationController::class, 'show'])->name('conversations.show');
+        Route::put('/conversations/{uuid}', [AiConversationController::class, 'update'])->name('conversations.update');
+        Route::delete('/conversations/{uuid}', [AiConversationController::class, 'destroy'])->name('conversations.destroy');
+        Route::post('/conversations/{uuid}/messages', [AiConversationController::class, 'storeMessage'])->name('conversations.messages.store');
     });
 
 // =============================================================================
@@ -589,6 +626,10 @@ Route::middleware(['auth:sanctum', 'dashboard.access:admin'])
     ->name('dashboard.ai.')
     ->group(function () {
         Route::post('/ask', [AiController::class, 'ask'])->name('ask');
+        Route::get('/conversations', [AiController::class, 'conversations'])->name('conversations');
+        Route::get('/conversations/{uuid}', [AiController::class, 'show'])->name('conversations.show');
+        Route::patch('/conversations/{uuid}', [AiController::class, 'rename'])->name('conversations.rename');
+        Route::delete('/conversations/{uuid}', [AiController::class, 'destroy'])->name('conversations.destroy');
     });
 
 // =============================================================================
@@ -661,3 +702,23 @@ Route::middleware(['auth:sanctum', 'dashboard.access:facility'])
         Route::get('{facility}/users', [FacilityUsersController::class, 'index'])->name('users.index');
         Route::get('{facility}/users/{user}', [FacilityUsersController::class, 'show'])->name('users.show');
     });
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
+Route::middleware('auth:sanctum')->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/unread', [NotificationController::class, 'unread'])->name('unread');
+    Route::get('/count', [NotificationController::class, 'count'])->name('count');
+    Route::patch('/{notification}/read', [NotificationController::class, 'read'])->name('read');
+    Route::patch('/read-all', [NotificationController::class, 'readAll'])->name('read-all');
+    Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+    Route::delete('/', [NotificationController::class, 'destroyAll'])->name('destroy-all');
+});
+
+// =============================================================================
+// STAFF CALENDAR
+// =============================================================================
+
+Route::middleware('auth:sanctum')->get('/calendar', [CalendarController::class, 'index']);
