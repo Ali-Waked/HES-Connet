@@ -15,7 +15,6 @@ class AppointmentSeeder extends Seeder
 {
     public function run(): void
     {
-        $facilityStaffRecords = FacilityStaff::all();
         $patientIds = Patient::pluck('id')->toArray();
 
         $reasons = [
@@ -36,30 +35,36 @@ class AppointmentSeeder extends Seeder
             AppointmentStatus::NO_SHOW, AppointmentStatus::IN_PROGRESS,
         ];
 
-        foreach ($facilityStaffRecords as $fs) {
-            $numAppointments = fake()->numberBetween(1, 5);
-            for ($i = 0; $i < $numAppointments; $i++) {
-                $patientId = $patientIds[array_rand($patientIds)];
-                $status = $statuses[array_rand($statuses)];
-                $startAt = fake()->dateTimeBetween('-3 months', '+1 month');
-                $endAt = (clone $startAt)->modify('+'.fake()->numberBetween(15, 60).' minutes');
+        FacilityStaff::chunkById(200, function ($facilityStaffRecords) use ($patientIds, $reasons, $statuses) {
+            $records = [];
+            foreach ($facilityStaffRecords as $fs) {
+                $numAppointments = fake()->numberBetween(1, 5);
+                for ($i = 0; $i < $numAppointments; $i++) {
+                    $patientId = $patientIds[array_rand($patientIds)];
+                    $status = $statuses[array_rand($statuses)];
+                    $startAt = fake()->dateTimeBetween('-3 months', '+1 month');
+                    $endAt = (clone $startAt)->modify('+'.fake()->numberBetween(15, 60).' minutes');
 
-                Appointment::create([
-                    'uuid' => Str::uuid(),
-                    'facility_staff_id' => $fs->id,
-                    'patient_id' => $patientId,
-                    'start_at' => $startAt->format('Y-m-d H:i:s'),
-                    'end_at' => $endAt->format('Y-m-d H:i:s'),
-                    'status' => $status,
-                    'reason' => $reasons[array_rand($reasons)],
-                    'notes' => in_array($status, [AppointmentStatus::COMPLETED, AppointmentStatus::CONFIRMED])
-                        ? fake()->optional(0.6)->sentence()
-                        : null,
-                    'cancellation_reason' => $status === AppointmentStatus::CANCELLED
-                        ? fake()->randomElement(['Patient cancelled', 'Emergency', 'Schedule conflict', 'Patient no-show'])
-                        : null,
-                ]);
+                    $records[] = [
+                        'uuid' => Str::uuid(),
+                        'facility_staff_id' => $fs->id,
+                        'patient_id' => $patientId,
+                        'start_at' => $startAt->format('Y-m-d H:i:s'),
+                        'end_at' => $endAt->format('Y-m-d H:i:s'),
+                        'status' => $status,
+                        'reason' => $reasons[array_rand($reasons)],
+                        'notes' => in_array($status, [AppointmentStatus::COMPLETED, AppointmentStatus::CONFIRMED])
+                            ? fake()->optional(0.6)->sentence()
+                            : null,
+                        'cancellation_reason' => $status === AppointmentStatus::CANCELLED
+                            ? fake()->randomElement(['Patient cancelled', 'Emergency', 'Schedule conflict', 'Patient no-show'])
+                            : null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
             }
-        }
+            Appointment::insert($records);
+        });
     }
 }

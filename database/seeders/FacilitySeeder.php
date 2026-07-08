@@ -117,7 +117,7 @@ class FacilitySeeder extends Seeder
         ];
 
         $additionalTypes = ['hospital', 'clinic', 'pharmacy', 'medical_point'];
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 55; $i++) {
             $facilities[] = [
                 'name' => [
                     'en' => fake()->company().' '.fake()->randomElement(['Health Center', 'Medical Facility', 'Clinic', 'Pharmacy', 'Hospital']),

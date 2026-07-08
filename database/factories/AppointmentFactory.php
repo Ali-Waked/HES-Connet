@@ -22,7 +22,7 @@ class AppointmentFactory extends Factory
 
         return [
             'uuid' => Str::uuid(),
-            'facility_staff_id' => FacilityStaff::factory(),
+            'facility_staff_id' => fn () => FacilityStaff::inRandomOrder()->first()?->id ?? FacilityStaff::factory(),
             'patient_id' => Patient::factory(),
             'start_at' => $startAt->format('Y-m-d H:i:s'),
             'end_at' => $endAt->format('Y-m-d H:i:s'),

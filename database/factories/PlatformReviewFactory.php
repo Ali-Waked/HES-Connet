@@ -29,11 +29,11 @@ class PlatformReviewFactory extends Factory
                 'Good concept with great potential.',
                 'Very user-friendly and reliable platform.',
             ]),
-            'admin_reply' => null,
+            'reply' => null,
             'replied_by' => null,
             'replied_at' => null,
             'is_featured' => fake()->boolean(10),
-            'status' => fake()->randomElement(['published', 'published', 'pending', 'hidden']),
+            'status' => fake()->randomElement(['pending', 'approved', 'approved', 'rejected', 'hidden']),
         ];
     }
 }

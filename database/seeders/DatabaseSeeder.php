@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             MedicineSeeder::class,
 
             // Facilities and staff
+            SpecializationSeeder::class,
             FacilitySeeder::class,
             StaffSeeder::class,
             PatientSeeder::class,
@@ -53,6 +54,10 @@ class DatabaseSeeder extends Seeder
 
             // Appointments and operations
             AppointmentSeeder::class,
+
+            // Prescriptions and medication requests depend on appointments
+            PrescriptionSeeder::class,
+            MedicationRequestSeeder::class,
 
             // Reviews depend on completed appointments
             ReviewSeeder::class,

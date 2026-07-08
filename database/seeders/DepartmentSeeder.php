@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Department;
+use App\Models\Facility;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -35,18 +36,30 @@ class DepartmentSeeder extends Seeder
             ['name' => ['en' => 'Psychiatry', 'ar' => 'الطب النفسي'], 'image' => 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400'],
         ];
 
-        foreach ($departments as $data) {
-            Department::create([
-                'uuid' => Str::uuid(),
-                'name' => $data['name'],
-                'description' => [
-                    'en' => 'Specialized department providing comprehensive medical care.',
-                    'ar' => 'قسم متخصص يقدم رعاية طبية شاملة.',
-                ],
-                'image' => $data['image'],
-                'head_facility_staff_id' => null,
-                'is_active' => true,
-            ]);
+        $facilityIds = Facility::pluck('id')->toArray();
+
+        $chunks = array_chunk($facilityIds, 10);
+        foreach ($chunks as $batch) {
+            $records = [];
+            foreach ($batch as $facilityId) {
+                foreach ($departments as $data) {
+                    $records[] = [
+                        'uuid' => Str::uuid(),
+                        'facility_id' => $facilityId,
+                        'name' => json_encode($data['name']),
+                        'description' => json_encode([
+                            'en' => 'Specialized department providing comprehensive medical care.',
+                            'ar' => 'قسم متخصص يقدم رعاية طبية شاملة.',
+                        ]),
+                        'image' => $data['image'],
+                        'head_facility_staff_id' => null,
+                        'is_active' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            }
+            Department::insert($records);
         }
     }
 }

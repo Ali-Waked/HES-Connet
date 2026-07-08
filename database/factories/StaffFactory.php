@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Enums\AccountStatus;
 use App\Models\Profession;
+use App\Models\Specialization;
 use App\Models\Staff;
 use App\Models\StaffPosition;
 use App\Models\User;
@@ -22,10 +23,7 @@ class StaffFactory extends Factory
             'uuid' => Str::uuid(),
             'user_id' => User::factory(),
             'profession_id' => fn () => Profession::inRandomOrder()->first()?->id ?? Profession::factory(),
-            'specialization' => [
-                'en' => fake()->randomElement(['Cardiology', 'Pediatrics', 'Neurology', 'Orthopedics', 'Dermatology', 'Ophthalmology', 'General Surgery', 'Internal Medicine']),
-                'ar' => fake('ar_SA')->randomElement(['قلب', 'أطفال', 'أعصاب', 'عظام', 'جلدية', 'عيون', 'جراحة عامة', 'باطنة']),
-            ],
+            'specialization_id' => fn () => Specialization::inRandomOrder()->first()?->id ?? Specialization::factory()->create()->id,
             'experience_years' => fake()->numberBetween(1, 30),
             'bio' => [
                 'en' => fake()->paragraph(),

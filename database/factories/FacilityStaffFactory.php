@@ -23,7 +23,6 @@ class FacilityStaffFactory extends Factory
             'facility_id' => Facility::factory(),
             'department_id' => null,
             'position_id' => null,
-            'position' => fake()->jobTitle(),
             'role_id' => Role::factory(),
             'joined_at' => fake()->dateTimeBetween('-5 years', 'now')->format('Y-m-d'),
             'ended_at' => null,
