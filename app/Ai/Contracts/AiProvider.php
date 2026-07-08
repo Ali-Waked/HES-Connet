@@ -9,4 +9,6 @@ interface AiProvider
     public function chat(string $systemPrompt, string $userMessage, array $tools = []): string;
 
     public function chatWithTools(string $systemPrompt, string $userMessage, array $tools): array;
+
+    public function chatWithMessages(array $messages, array $tools): array;
 }

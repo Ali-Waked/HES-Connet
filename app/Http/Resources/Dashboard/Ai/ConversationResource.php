@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Dashboard\Ai;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Str;
 
 class ConversationResource extends JsonResource
 {
@@ -16,14 +15,6 @@ class ConversationResource extends JsonResource
             'uuid' => $this->uuid,
             'title' => $this->title,
             'language' => $this->language,
-            'status' => $this->status,
-            'message_count' => $this->message_count,
-            'total_tokens' => $this->total_tokens,
-            'last_activity_at' => $this->last_activity_at?->toIso8601String(),
-            'summary' => $this->summary,
-            'last_message_preview' => $this->relationLoaded('lastMessage')
-                ? Str::limit($this->lastMessage->first()?->content, 120)
-                : null,
             'created_at' => $this->created_at->toIso8601String(),
             'updated_at' => $this->updated_at->toIso8601String(),
         ];

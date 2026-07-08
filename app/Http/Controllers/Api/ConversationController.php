@@ -122,19 +122,30 @@ class ConversationController extends Controller
     {
         $user = $request->user();
 
-        $participantId = User::where('uuid', $request->validated('participant_ids')[0])->first()?->uuid;
+        $participantIds = $request->validated('participant_ids');
+        $participantUuid = $participantIds[0] ?? null;
+
+        if (! $participantUuid) {
+            return response()->json(['message' => __('Participant ID is required.')], 422);
+        }
+
+        $participant = User::where('uuid', $participantUuid)->first();
+
+        if (! $participant) {
+            return response()->json(['message' => __('Participant not found.')], 404);
+        }
 
         $conversation = Conversation::query()
             ->whereHas('participants', fn ($q) => $q->where('user_id', $user->id))
-            ->whereHas('participants', fn ($q) => $q->where('user_id', $participantId))
+            ->whereHas('participants', fn ($q) => $q->where('user_id', $participant->id))
             ->first();
-        // info(['in', $user, $conversation]);
+
         if (! $conversation) {
             $conversation = $this->createConversationAction->execute(
                 $user,
                 [
-                    'participant_ids' => [$participantId],
-                    'type' => $request->validated('type'),
+                    'participant_ids' => [$participantUuid],
+                    'type' => $request->validated('type', 'private'),
                 ]
             );
         }

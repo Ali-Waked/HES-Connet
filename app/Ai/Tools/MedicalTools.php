@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Ai\Tools;
 
 use App\Models\Facility;
-use App\Models\Profession;
+use App\Models\Specialization;
 use App\Models\Staff;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -31,17 +31,16 @@ class GetDoctorsBySpecialtyTool extends BaseTool
                     'description' => 'Medical specialty to filter by (e.g., "cardiology", "neurology", "dermatology", "orthopedics", "pediatrics")',
                 ],
                 'profession_id' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Filter by profession ID',
                 ],
                 'facility_id' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Filter by facility ID to get doctors at a specific facility',
                 ],
                 'limit' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Maximum number of doctors to return',
-                    'default' => 10,
                 ],
             ],
         ];
@@ -51,8 +50,9 @@ class GetDoctorsBySpecialtyTool extends BaseTool
     {
         $query = Staff::query()
             ->with([
-                'user:id,name,email,avatar',
-                'facilityStaff' => fn ($q) => $q->whereNull('ended_at')->with('facility:id,uuid,name,latitude,longitude, city_id'),
+                'user:id,name,email',
+                'specialization',
+                'facilityStaff' => fn ($q) => $q->whereNull('ended_at')->with('facility:id,uuid,name,latitude,longitude,city_id'),
             ])
             ->whereHas('facilityStaff', fn (Builder $q) => $q
                 ->whereNull('ended_at')
@@ -60,10 +60,11 @@ class GetDoctorsBySpecialtyTool extends BaseTool
             );
 
         if (! empty($arguments['specialty'])) {
-            $query->where(function (Builder $q) use ($arguments) {
-                $term = $arguments['specialty'];
-                $q->where('specialization', 'like', "%{$term}%");
-            });
+            $term = mb_strtolower($arguments['specialty']);
+            $query->whereHas('specialization', fn (Builder $q) => $q
+                ->where('name->en', 'like', "%{$term}%")
+                ->orWhere('name->ar', 'like', "%{$term}%")
+            );
         }
 
         if (! empty($arguments['profession_id'])) {
@@ -83,7 +84,7 @@ class GetDoctorsBySpecialtyTool extends BaseTool
             'id' => $doctor->id,
             'uuid' => $doctor->uuid,
             'name' => $doctor->user?->name,
-            'specialization' => $doctor->specialization,
+            'specialization' => $doctor->specialization?->getTranslations('name'),
             'experience_years' => $doctor->experience_years,
             'consultation_fee' => $doctor->consultation_fee,
             'facilities' => $doctor->facilityStaff->map(fn ($fs) => [
@@ -104,7 +105,7 @@ class SearchSpecialtiesTool extends BaseTool
 
     public function description(): string
     {
-        return 'Search for medical specialties/professions. Maps symptoms to possible medical specialties and returns matching professions from the database.';
+        return 'Search for medical specializations from the database. Matches patient symptoms to specializations through the symptoms-to-specialization relationship, or searches specializations by name. Returns real specializations with available doctor counts.';
     }
 
     public function parameters(): array
@@ -114,16 +115,15 @@ class SearchSpecialtiesTool extends BaseTool
             'properties' => [
                 'symptoms' => [
                     'type' => 'string',
-                    'description' => 'Patient symptoms description to match against specialties',
+                    'description' => 'Patient symptoms description to find matching medical specializations',
                 ],
                 'search' => [
                     'type' => 'string',
-                    'description' => 'Search for specific specialty or profession name',
+                    'description' => 'Search for a specific specialization name (e.g., "cardiology", "neurology")',
                 ],
                 'limit' => [
-                    'type' => 'integer',
-                    'description' => 'Maximum number of specialties to return',
-                    'default' => 10,
+                    'type' => ['integer', 'string'],
+                    'description' => 'Maximum number of results to return',
                 ],
             ],
         ];
@@ -131,117 +131,61 @@ class SearchSpecialtiesTool extends BaseTool
 
     public function handle(array $arguments): mixed
     {
-        $symptomToSpecialtyMap = [
-            'chest pain' => ['Cardiology', 'Pulmonology'],
-            'shortness of breath' => ['Cardiology', 'Pulmonology'],
-            'palpitations' => ['Cardiology'],
-            'high blood pressure' => ['Cardiology'],
-            'headache' => ['Neurology', 'General Medicine'],
-            'dizziness' => ['Neurology', 'ENT'],
-            'migraine' => ['Neurology'],
-            'seizure' => ['Neurology'],
-            'numbness' => ['Neurology'],
-            'skin rash' => ['Dermatology'],
-            'skin infection' => ['Dermatology'],
-            'acne' => ['Dermatology'],
-            'hair loss' => ['Dermatology'],
-            'joint pain' => ['Orthopedics', 'Rheumatology'],
-            'back pain' => ['Orthopedics', 'Neurosurgery'],
-            'fracture' => ['Orthopedics'],
-            'swelling' => ['Orthopedics', 'General Medicine'],
-            'fever' => ['General Medicine', 'Infectious Disease'],
-            'cough' => ['Pulmonology', 'General Medicine'],
-            'sore throat' => ['ENT', 'General Medicine'],
-            'ear pain' => ['ENT'],
-            'hearing loss' => ['ENT'],
-            'abdominal pain' => ['Gastroenterology', 'General Medicine'],
-            'nausea' => ['Gastroenterology', 'General Medicine'],
-            'vomiting' => ['Gastroenterology', 'General Medicine'],
-            'diarrhea' => ['Gastroenterology', 'General Medicine'],
-            'constipation' => ['Gastroenterology'],
-            'blurred vision' => ['Ophthalmology', 'Neurology'],
-            'eye pain' => ['Ophthalmology'],
-            'vision loss' => ['Ophthalmology'],
-            'frequent urination' => ['Urology', 'Nephrology'],
-            'blood in urine' => ['Urology', 'Nephrology'],
-            'kidney pain' => ['Nephrology', 'Urology'],
-            'anxiety' => ['Psychiatry', 'Psychology'],
-            'depression' => ['Psychiatry', 'Psychology'],
-            'insomnia' => ['Psychiatry', 'General Medicine'],
-            'pregnancy' => ['Obstetrics & Gynecology'],
-            'menstrual pain' => ['Obstetrics & Gynecology'],
-            'vaginal discharge' => ['Obstetrics & Gynecology'],
-            'allergy' => ['Immunology', 'General Medicine'],
-            'asthma' => ['Pulmonology'],
-            'diabetes' => ['Endocrinology'],
-            'thyroid' => ['Endocrinology'],
-            'weight loss' => ['Endocrinology', 'General Medicine'],
-            'fatigue' => ['General Medicine', 'Endocrinology'],
-            'anemia' => ['Hematology', 'General Medicine'],
-            'bleeding' => ['Hematology', 'General Medicine'],
-            'cancer' => ['Oncology'],
-            'lump' => ['Oncology', 'General Surgery'],
-        ];
-
         if (! empty($arguments['search'])) {
-            $professions = Profession::query()
-                ->where('name', 'like', "%{$arguments['search']}%")
-                ->orWhere('slug', 'like', "%{$arguments['search']}%")
+            $term = mb_strtolower($arguments['search']);
+
+            $specializations = Specialization::query()
+                ->where('name->en', 'like', "%{$term}%")
+                ->orWhere('name->ar', 'like', "%{$term}%")
+                ->withCount(['staff' => fn ($q) => $q->whereHas('facilityStaff', fn ($q2) => $q2
+                    ->whereNull('ended_at')
+                    ->whereHas('role', fn ($r) => $r->where('slug', 'doctor_portal_user'))
+                )])
                 ->limit(min($arguments['limit'] ?? 10, 50))
                 ->get()
-                ->map(fn ($p) => [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'slug' => $p->slug,
-                    'description' => $p->description,
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'uuid' => $s->uuid,
+                    'name' => $s->getTranslations('name'),
+                    'description' => $s->getTranslations('description'),
+                    'available_doctors' => $s->staff_count,
                 ])
+                ->values()
                 ->toArray();
 
-            return $professions;
+            return $specializations;
         }
 
         $symptoms = mb_strtolower($arguments['symptoms'] ?? '');
-        $matchedSpecialties = [];
 
-        foreach ($symptomToSpecialtyMap as $keyword => $specialties) {
-            if (str_contains($symptoms, $keyword)) {
-                $matchedSpecialties = array_merge($matchedSpecialties, $specialties);
-            }
+        if (empty($symptoms)) {
+            return [];
         }
 
-        $matchedSpecialties = array_unique($matchedSpecialties);
-
-        if (empty($matchedSpecialties)) {
-            $matchedSpecialties = ['General Medicine'];
-        }
-
-        $professions = Profession::query()
-            ->where(function ($q) use ($matchedSpecialties) {
-                foreach ($matchedSpecialties as $specialty) {
-                    $q->orWhere('slug', 'like', "%{$specialty}%")
-                        ->orWhere('name', 'like', "%{$specialty}%");
-                }
+        $specializations = Specialization::query()
+            ->with('symptoms')
+            ->whereHas('symptoms', function ($q) use ($symptoms) {
+                $q->where('name->en', 'like', "%{$symptoms}%")
+                    ->orWhere('name->ar', 'like', "%{$symptoms}%");
             })
+            ->withCount(['staff' => fn ($q) => $q->whereHas('facilityStaff', fn ($q2) => $q2
+                ->whereNull('ended_at')
+                ->whereHas('role', fn ($r) => $r->where('slug', 'doctor_portal_user'))
+            )])
             ->limit(min($arguments['limit'] ?? 10, 50))
             ->get()
-            ->map(fn ($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'slug' => $p->slug,
-                'description' => $p->description,
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'uuid' => $s->uuid,
+                'name' => $s->getTranslations('name'),
+                'description' => $s->getTranslations('description'),
+                'available_doctors' => $s->staff_count,
+                'symptoms' => $s->symptoms->map(fn ($sym) => $sym->getTranslations('name'))->values()->toArray(),
             ])
+            ->values()
             ->toArray();
 
-        if (empty($professions)) {
-            return array_map(fn ($s) => [
-                'id' => null,
-                'name' => $s,
-                'slug' => str_replace([' & ', ' '], ['-', '-'], mb_strtolower($s)),
-                'description' => null,
-            ], $matchedSpecialties);
-        }
-
-        return $professions;
+        return $specializations;
     }
 }
 
@@ -263,17 +207,16 @@ class GetNearbyFacilitiesTool extends BaseTool
             'type' => 'object',
             'properties' => [
                 'latitude' => [
-                    'type' => 'number',
+                    'type' => ['number', 'string'],
                     'description' => 'Latitude of the location',
                 ],
                 'longitude' => [
-                    'type' => 'number',
+                    'type' => ['number', 'string'],
                     'description' => 'Longitude of the location',
                 ],
                 'radius_km' => [
-                    'type' => 'number',
+                    'type' => ['number', 'string'],
                     'description' => 'Search radius in kilometers',
-                    'default' => 10,
                 ],
                 'facility_type' => [
                     'type' => 'string',
@@ -281,9 +224,8 @@ class GetNearbyFacilitiesTool extends BaseTool
                     'enum' => ['hospital', 'clinic', 'pharmacy', 'laboratory'],
                 ],
                 'limit' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Maximum results to return',
-                    'default' => 10,
                 ],
             ],
         ];

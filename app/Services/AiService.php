@@ -34,15 +34,10 @@ class AiService
             $tools[$tool->name()] = $tool;
         }
 
-        $toolArrays = [];
-        foreach ($tools as $name => $tool) {
-            $toolArrays[$name] = $tool->toArray();
-        }
-
         $result = $this->provider->chatWithTools(
             $agent->instructions(),
             $message,
-            $toolArrays,
+            $tools,
         );
 
         $response = $result['content'];
@@ -67,15 +62,10 @@ class AiService
             $tools[$tool->name()] = $tool;
         }
 
-        $toolArrays = [];
-        foreach ($tools as $name => $tool) {
-            $toolArrays[$name] = $tool->toArray();
-        }
-
         $result = $this->provider->chatWithTools(
             $agent->instructions(),
             $data['message'],
-            $toolArrays,
+            $tools,
         );
 
         $content = $result['content'];
@@ -94,6 +84,53 @@ class AiService
         );
 
         return $parsed;
+    }
+
+    public function converse(
+        string $systemPrompt,
+        string $userMessage,
+        array $previousMessages,
+        array $tools,
+        ?string $summary = null,
+        ?int $userId = null,
+    ): array {
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+        ];
+
+        if ($summary) {
+            $messages[] = [
+                'role' => 'system',
+                'content' => "Conversation summary:\n{$summary}",
+            ];
+        }
+
+        foreach ($previousMessages as $msg) {
+            $messages[] = [
+                'role' => $msg['role'],
+                'content' => $msg['content'],
+            ];
+        }
+
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        $result = $this->provider->chatWithMessages($messages, $tools);
+
+        AiPrompted::dispatch(
+            userId: $userId,
+            agent: 'PatientHealthAssistant',
+            prompt: $userMessage,
+            response: $result['content'],
+            metadata: [
+                'tool_calls' => $result['tool_calls'],
+                'tool_results' => $result['tool_results'],
+                'prompt_tokens' => $result['prompt_tokens'],
+                'completion_tokens' => $result['completion_tokens'],
+                'total_tokens' => $result['total_tokens'],
+            ],
+        );
+
+        return $result;
     }
 
     private function parseStructuredResponse(string $content): array

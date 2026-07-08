@@ -34,9 +34,8 @@ class GetUsersTool extends BaseTool
                     'description' => 'Search by name or email',
                 ],
                 'limit' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Maximum number of users to return',
-                    'default' => 10,
                 ],
             ],
         ];
@@ -83,7 +82,7 @@ class GetFacilitiesTool extends BaseTool
                     'enum' => ['hospital', 'clinic', 'pharmacy', 'laboratory'],
                 ],
                 'city_id' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Filter by city ID',
                 ],
                 'search' => [
@@ -91,9 +90,8 @@ class GetFacilitiesTool extends BaseTool
                     'description' => 'Search by name',
                 ],
                 'limit' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Maximum number of facilities to return',
-                    'default' => 10,
                 ],
             ],
         ];
@@ -140,17 +138,16 @@ class GetDonationsTool extends BaseTool
             'type' => 'object',
             'properties' => [
                 'story_id' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Filter by story ID',
                 ],
                 'donor_id' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Filter by donor user ID',
                 ],
                 'limit' => [
-                    'type' => 'integer',
+                    'type' => ['integer', 'string'],
                     'description' => 'Maximum number of records',
-                    'default' => 10,
                 ],
             ],
         ];
@@ -195,13 +192,11 @@ class GetReportsTool extends BaseTool
                     'type' => 'string',
                     'description' => 'Type of report to generate',
                     'enum' => ['summary', 'users', 'facilities', 'appointments', 'revenue'],
-                    'default' => 'summary',
                 ],
                 'period' => [
                     'type' => 'string',
                     'description' => 'Time period for the report',
                     'enum' => ['all', 'today', 'this_week', 'this_month', 'this_year'],
-                    'default' => 'all',
                 ],
             ],
         ];

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Conversation;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,7 +15,6 @@ class StoreMessageRequest extends FormRequest
 
     public function rules(): array
     {
-
         return [
             'message' => ['required', 'string', 'max:10000'],
         ];

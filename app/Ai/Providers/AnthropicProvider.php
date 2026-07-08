@@ -8,6 +8,7 @@ use App\Ai\Contracts\AiProvider;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class AnthropicProvider implements AiProvider
 {
@@ -19,7 +20,8 @@ class AnthropicProvider implements AiProvider
 
     public function __construct()
     {
-        $this->apiKey = config('ai.providers.anthropic.api_key');
+        $this->apiKey = config('ai.providers.anthropic.api_key')
+            ?? throw new RuntimeException('ANTHROPIC_API_KEY is not set in .env');
         $this->model = config('ai.providers.anthropic.model');
         $this->baseUrl = config('ai.providers.anthropic.base_url', 'https://api.anthropic.com/v1');
     }
@@ -130,6 +132,23 @@ class AnthropicProvider implements AiProvider
             'tool_calls' => $toolBlocks,
             'tool_results' => $results,
         ];
+    }
+
+    public function chatWithMessages(array $messages, array $tools): array
+    {
+        $lastUserMessage = '';
+        $systemPrompt = '';
+
+        foreach ($messages as $msg) {
+            if ($msg['role'] === 'system') {
+                $systemPrompt = $msg['content'];
+            }
+            if ($msg['role'] === 'user') {
+                $lastUserMessage = $msg['content'];
+            }
+        }
+
+        return $this->chatWithTools($systemPrompt, $lastUserMessage, $tools);
     }
 
     private function client(): PendingRequest
