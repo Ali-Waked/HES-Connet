@@ -13,6 +13,7 @@ use App\Services\SubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SubscriptionTest extends TestCase
@@ -23,7 +24,7 @@ class SubscriptionTest extends TestCase
     // Subscribe
     // -----------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_creates_a_new_subscription_and_sends_verification_email(): void
     {
         Mail::fake();
@@ -59,7 +60,7 @@ class SubscriptionTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_reactivates_unverified_subscription_and_regenerates_token(): void
     {
         Mail::fake();
@@ -89,7 +90,7 @@ class SubscriptionTest extends TestCase
         Mail::assertSent(SubscriptionVerificationMail::class);
     }
 
-    /** @test */
+    #[Test]
     public function it_reactivates_verified_subscription_without_resending_verification(): void
     {
         Mail::fake();
@@ -118,7 +119,7 @@ class SubscriptionTest extends TestCase
         Mail::assertNotSent(SubscriptionVerificationMail::class);
     }
 
-    /** @test */
+    #[Test]
     public function it_rejects_invalid_subscription_types(): void
     {
         $response = $this->postJson('/api/public/subscriptions', [
@@ -131,7 +132,7 @@ class SubscriptionTest extends TestCase
             ->assertJsonValidationErrors(['types.0']);
     }
 
-    /** @test */
+    #[Test]
     public function it_rejects_invalid_locale(): void
     {
         $response = $this->postJson('/api/public/subscriptions', [
@@ -148,7 +149,7 @@ class SubscriptionTest extends TestCase
     // Verify
     // -----------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_verifies_subscription_and_activates_it(): void
     {
         $subscription = Subscription::create([
@@ -169,7 +170,7 @@ class SubscriptionTest extends TestCase
         $this->assertNotNull($subscription->verified_at);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_404_for_invalid_verify_token(): void
     {
         $response = $this->getJson('/api/public/subscriptions/verify/non-existent-token');
@@ -181,7 +182,7 @@ class SubscriptionTest extends TestCase
     // Update Types
     // -----------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_syncs_subscription_types_via_token(): void
     {
         $subscription = Subscription::create([
@@ -205,7 +206,7 @@ class SubscriptionTest extends TestCase
         $this->assertDatabaseMissing('subscription_types', ['subscription_id' => $subscription->id, 'type' => 'article']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_404_for_invalid_update_token(): void
     {
         $response = $this->patchJson('/api/public/subscriptions/no-such-token', [
@@ -219,7 +220,7 @@ class SubscriptionTest extends TestCase
     // Unsubscribe
     // -----------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_unsubscribes_and_keeps_record(): void
     {
         $subscription = Subscription::create([
@@ -240,7 +241,7 @@ class SubscriptionTest extends TestCase
         $this->assertDatabaseHas('subscriptions', ['id' => $subscription->id, 'is_active' => false]);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_404_for_invalid_unsubscribe_token(): void
     {
         $response = $this->postJson('/api/public/subscriptions/unsubscribe/ghost-token');
@@ -252,7 +253,7 @@ class SubscriptionTest extends TestCase
     // Notify Subscribers
     // -----------------------------------------------------------------------
 
-    /** @test */
+    #[Test]
     public function it_dispatches_jobs_only_to_active_verified_subscribers_of_matching_type(): void
     {
         Queue::fake();
@@ -281,7 +282,7 @@ class SubscriptionTest extends TestCase
         Queue::assertPushed(SendContentNotificationJob::class, fn ($job) => $job->subscription->id === $sub1->id);
     }
 
-    /** @test */
+    #[Test]
     public function it_sends_localized_email_to_arabic_subscriber(): void
     {
         Mail::fake();
@@ -311,7 +312,7 @@ class SubscriptionTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_does_not_delete_data_on_unsubscribe(): void
     {
         $subscription = Subscription::create([
