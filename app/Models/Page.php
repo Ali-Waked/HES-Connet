@@ -17,7 +17,6 @@ use Spatie\Translatable\HasTranslations;
 class Page extends Model
 {
     use Auditable;
-
     use HasTranslations, HasUuids;
 
     protected function casts(): array

@@ -15,6 +15,5 @@ use Spatie\Translatable\HasTranslations;
 class Announcement extends Model
 {
     use Auditable;
-
     use HasTranslations;
 }

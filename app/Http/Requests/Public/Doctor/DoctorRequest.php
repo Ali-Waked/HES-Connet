@@ -17,7 +17,7 @@ class DoctorRequest extends FormRequest
     {
         return [
             'search' => ['nullable', 'string', 'max:255'],
-            'specialization' => ['nullable', 'string', 'max:255'],
+            'specialization_id' => ['nullable', 'integer', 'exists:specializations,id'],
             'facility_id' => ['nullable', 'uuid', 'exists:facilities,uuid'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];

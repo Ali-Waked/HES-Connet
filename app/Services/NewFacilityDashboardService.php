@@ -39,11 +39,11 @@ class NewFacilityDashboardService
                 ->distinct('patient_id')
                 ->count('patient_id'),
             'total_appointments' => Appointment::whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facilityId))->count(),
-            'total_articles' => Article::where('facility_id', $facilityId)->count(),
+            'total_articles' => Article::forFacility($facilityId)->count(),
             'total_stories' => Story::whereHas('patient', fn ($q) => $q->whereHas('appointments.facilityStaff', fn ($fs) => $fs->where('facility_id', $facilityId)))->count(),
             'total_job_posts' => JobPost::where('facility_id', $facilityId)->count(),
             'total_donations' => Donation::whereHas('story.patient', fn ($q) => $q->whereHas('appointments.facilityStaff', fn ($fs) => $fs->where('facility_id', $facilityId)))->count(),
-            'total_categories' => Category::whereHas('articles', fn ($q) => $q->where('facility_id', $facilityId))->count(),
+            'total_categories' => Category::whereHas('articles', fn ($q) => $q->forFacility($facilityId))->count(),
         ];
     }
 
@@ -57,7 +57,7 @@ class NewFacilityDashboardService
             'departments_growth' => $this->growthPercentageForDepartments($facilityId),
             'patients_growth' => $this->growthPercentageForPatients($facilityId),
             'appointments_growth' => $this->growthPercentageForAppointments($facilityId),
-            'articles_growth' => $this->growthPercentage(new Article, $facilityId, 'facility_id'),
+            'articles_growth' => $this->growthPercentage(Article::forFacility($facilityId)),
             'job_posts_growth' => $this->growthPercentage(new JobPost, $facilityId, 'facility_id'),
         ];
     }
@@ -94,7 +94,7 @@ class NewFacilityDashboardService
                 'facility_id'
             ),
             'stories_published' => $this->storiesPerMonth($facilityId),
-            'articles_published' => $this->monthlyCount(new Article, $facilityId, 'facility_id'),
+            'articles_published' => $this->monthlyCount(Article::forFacility($facilityId)),
             'top_departments' => $this->topDepartments($facilityId),
             'top_doctors' => $this->topDoctors($facilityId),
             'top_symptoms' => $this->topSymptoms($facilityId),
@@ -217,14 +217,14 @@ class NewFacilityDashboardService
         $fsIds = FacilityStaff::where('facility_id', $facilityId)->pluck('staff_id');
 
         return Staff::whereIn('id', $fsIds)
-            ->with('user:id,uuid,name')
+            ->with(['user:id,uuid,name', 'specialization'])
             ->latest('id')
             ->take(5)
             ->get()
             ->map(fn ($s) => [
                 'uuid' => $s->uuid,
                 'name' => $s->user?->getTranslations('name'),
-                'specialization' => $s->getTranslations('specialization'),
+                'specialization' => $s->specialization?->getTranslations('name'),
                 'created_at' => $s->created_at,
             ]);
     }
@@ -234,14 +234,14 @@ class NewFacilityDashboardService
         return FacilityStaff::where('facility_id', $facilityId)
             ->whereNull('ended_at')
             ->whereHas('role', fn ($q) => $q->where('slug', 'doctor'))
-            ->with('staff.user:id,uuid,name')
+            ->with('staff.user:id,uuid,name', 'staff.specialization')
             ->latest('created_at')
             ->take(5)
             ->get()
             ->map(fn ($fs) => [
                 'uuid' => $fs->staff->uuid,
                 'name' => $fs->staff->user?->getTranslations('name'),
-                'specialization' => $fs->staff->getTranslations('specialization'),
+                'specialization' => $fs->staff->specialization?->getTranslations('name'),
                 'created_at' => $fs->created_at,
             ]);
     }
@@ -266,7 +266,7 @@ class NewFacilityDashboardService
 
     private function recentArticles(int $facilityId): Collection
     {
-        return Article::where('facility_id', $facilityId)
+        return Article::forFacility($facilityId)
             ->with('author:id,uuid,name')
             ->latest()
             ->take(5)
@@ -480,17 +480,24 @@ class NewFacilityDashboardService
 
     private function topSymptoms(int $facilityId): Collection
     {
-        return DB::table('facility_staff_symptom')
-            ->join('facility_staff', 'facility_staff_symptom.facility_staff_id', '=', 'facility_staff.id')
-            ->join('symptoms', 'facility_staff_symptom.symptom_id', '=', 'symptoms.id')
-            ->where('facility_staff.facility_id', $facilityId)
-            ->selectRaw('symptoms.id, symptoms.uuid, symptoms.name, COUNT(*) as total')
-            ->groupBy('symptoms.id', 'symptoms.uuid', 'symptoms.name')
+        return DB::table('specialization_symptom')
+            ->join('symptoms', 'specialization_symptom.symptom_id', '=', 'symptoms.id')
+            ->join('specializations', 'specialization_symptom.specialization_id', '=', 'specializations.id')
+            ->whereIn('specializations.id', function ($q) use ($facilityId) {
+                $q->select('staff.specialization_id')
+                    ->from('facility_staff')
+                    ->join('staff', 'facility_staff.staff_id', '=', 'staff.id')
+                    ->where('facility_staff.facility_id', $facilityId)
+                    ->whereNull('facility_staff.ended_at')
+                    ->whereNotNull('staff.specialization_id');
+            })
+            ->selectRaw('symptoms.id, symptoms.name, COUNT(*) as total')
+            ->groupBy('symptoms.id', 'symptoms.name')
             ->orderByDesc('total')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
-                'uuid' => $row->uuid,
+                'id' => $row->id,
                 'name' => json_decode($row->name, true) ?? $row->name,
                 'count' => (int) $row->total,
             ]);

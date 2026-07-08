@@ -27,14 +27,17 @@ class DepartmentResource extends JsonResource
                     'uuid' => $this->head?->uuid,
                     'name' => $this->head?->staff?->user?->name,
                     'avatar' => $this->head?->staff?->user?->avatar,
-                    'specialization' => $this->head?->staff?->specialization,
+                    'specialization' => $this->head?->staff?->specialization?->getTranslations('name'),
                 ];
             }),
 
-            'facility' => $this->whenLoaded('facilityStaff.facility', function () {
+            'facility' => $this->whenLoaded('facility', function () {
                 return [
-                    'uuid' => $this->facilityStaff?->facility?->uuid,
-                    'name' => $this->facilityStaff?->facility?->name,
+                    'id' => $this->facility->id,
+                    'uuid' => $this->facility->uuid,
+                    'name' => $this->facility->getTranslations('name'),
+                    'cover_image' => $this->facility->cover_image,
+                    'description' => $this->facility->getTranslations('description'),
                 ];
             }),
 

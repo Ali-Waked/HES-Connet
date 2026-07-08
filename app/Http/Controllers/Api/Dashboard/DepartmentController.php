@@ -42,7 +42,7 @@ class DepartmentController extends Controller
     public function store(StoreDepartmentRequest $request): JsonResponse
     {
         info('hi');
-        $department = $this->department_service->create(
+        $department = $this->department_service->dashboardCreate(
             $request->validated()
         );
 
@@ -59,7 +59,7 @@ class DepartmentController extends Controller
      */
     public function show(Department $department): JsonResponse
     {
-        $department = $this->department_service->show($department);
+        $department = $this->department_service->dashboardShow($department);
 
         return response()->json([
             'id' => $department->id,
@@ -77,7 +77,7 @@ class DepartmentController extends Controller
      */
     public function update(UpdateDepartmentRequest $request, Department $department): JsonResponse
     {
-        $department = $this->department_service->update(
+        $department = $this->department_service->dashboardUpdate(
             $department,
             $request->validated()
         );
@@ -95,7 +95,7 @@ class DepartmentController extends Controller
      */
     public function destroy(Department $department): JsonResponse
     {
-        $this->department_service->destroy($department);
+        $this->department_service->dashboardDestroy($department);
 
         return response()->json([
             'message' => __('Department deleted successfully.'),

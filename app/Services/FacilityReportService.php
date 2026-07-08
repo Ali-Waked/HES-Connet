@@ -42,7 +42,7 @@ class FacilityReportService
                 ->whereNotNull('department_id')->distinct('department_id')->count('department_id'),
             'total_patients' => (clone $appointmentQuery)->distinct('patient_id')->count('patient_id'),
             'total_appointments' => (clone $appointmentQuery)->count(),
-            'total_articles' => $this->countWithFilter(Article::where('facility_id', $facilityId), $filters),
+            'total_articles' => $this->countWithFilter(Article::forFacility($facilityId), $filters),
             'total_job_posts' => $this->countWithFilter(JobPost::where('facility_id', $facilityId), $filters),
         ];
     }
@@ -199,7 +199,7 @@ class FacilityReportService
             ? "strftime('%Y-%m', created_at)"
             : "DATE_FORMAT(created_at, '%Y-%m')";
 
-        $query = Article::where('facility_id', $facilityId)
+        $query = Article::forFacility($facilityId)
             ->where('created_at', '>=', $now->copy()->subMonths(12)->startOfMonth());
 
         $query = $this->applyDateFilter($query, $filters);
@@ -350,7 +350,7 @@ class FacilityReportService
 
     private function latestArticles(int $facilityId): Collection
     {
-        return Article::where('facility_id', $facilityId)
+        return Article::forFacility($facilityId)
             ->with('author:id,uuid,name')
             ->latest()
             ->limit(10)

@@ -27,7 +27,6 @@ use Illuminate\Support\Facades\Storage;
 class FacilityDocument extends Model
 {
     use Auditable;
-
     use HasUuids;
 
     public function uniqueIds(): array

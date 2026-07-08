@@ -12,31 +12,28 @@ use App\Models\Facility;
 use App\Models\FacilityStaff;
 use App\Models\StaffUnavailability;
 use App\Services\StaffUnavailabilityService;
-use App\Services\UuidResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UnavailabilityController extends Controller
 {
     public function __construct(
-        private readonly StaffUnavailabilityService $unavailability_service,
-        private readonly UuidResolver $uuid_resolver,
+        private readonly StaffUnavailabilityService $unavailabilityService,
     ) {}
 
-    public function index(Request $request, string $staff): JsonResponse
-    {
-        info([$staff, '019ed9e2-6f98-7230-8c83-ba15c3dc223a']);
-        $facilityStaffQuery = FacilityStaff::where('staff_id', $staff->id);
+    public function index(
+        Request $request,
+        Facility $facility,
+    ): JsonResponse {
+        $staff = $request->user()->staff()->firstOrFail();
 
-        if ($facilityUuid = $request->query('facility_id')) {
-            $facilityId = $this->uuid_resolver->resolve(Facility::class, $facilityUuid);
-            $facilityStaffQuery->where('facility_id', $facilityId);
-        }
-
-        $facilityStaffIds = $facilityStaffQuery->pluck('id');
+        $facilityStaff = FacilityStaff::query()
+            ->where('facility_id', $facility->id)
+            ->where('staff_id', $staff->id)
+            ->firstOrFail();
 
         $unavailabilities = StaffUnavailability::query()
-            ->whereIn('facility_staff_id', $facilityStaffIds)
+            ->where('facility_staff_id', $facilityStaff->id)
             ->with('facilityStaff.facility')
             ->orderBy('start_at')
             ->get();
@@ -46,70 +43,71 @@ class UnavailabilityController extends Controller
         ]);
     }
 
-    public function store(StoreUnavailabilityRequest $request): JsonResponse
-    {
-        $validated = $request->validated();
-
+    public function store(
+        StoreUnavailabilityRequest $request,
+        Facility $facility,
+    ): JsonResponse {
         $staff = $request->user()->staff()->firstOrFail();
 
-        $facilityId = $this->uuid_resolver->resolve(Facility::class, $validated['facility_id']);
         $facilityStaff = FacilityStaff::query()
+            ->where('facility_id', $facility->id)
             ->where('staff_id', $staff->id)
-            ->where('facility_id', $facilityId)
             ->active()
             ->firstOrFail();
-        $validated['facility_staff_id'] = $facilityStaff->id;
-        // $validated['facility_staff_uuid'] = $facilityStaff->uuid;
-        // unset($validated['facility_id']);
 
-        $unavailability = $this->unavailability_service->create($validated);
+        $data = $request->validated();
+        $data['facility_staff_id'] = $facilityStaff->id;
+
+        $unavailability = $this->unavailabilityService->create($data);
 
         return response()->json([
             'message' => __('Unavailability created successfully.'),
-            'data' => new UnavailabilityResource($unavailability->load('facilityStaff.facility')),
+            'data' => new UnavailabilityResource(
+                $unavailability->load('facilityStaff.facility')
+            ),
         ], 201);
     }
 
-    public function update(UpdateUnavailabilityRequest $request, StaffUnavailability $unavailability): JsonResponse
-    {
+    public function update(
+        UpdateUnavailabilityRequest $request,
+        Facility $facility,
+        StaffUnavailability $unavailability,
+    ): JsonResponse {
         $staff = $request->user()->staff()->firstOrFail();
 
         FacilityStaff::query()
-            ->where('staff_id', $staff->id)
             ->where('id', $unavailability->facility_staff_id)
+            ->where('facility_id', $facility->id)
+            ->where('staff_id', $staff->id)
             ->firstOrFail();
 
-        $validated = $request->validated();
-
-        if (isset($validated['facility_id'])) {
-            $facilityId = $this->uuid_resolver->resolve(Facility::class, $validated['facility_id']);
-            $newFacilityStaff = FacilityStaff::query()
-                ->where('staff_id', $staff->id)
-                ->where('facility_id', $facilityId)
-                ->active()
-                ->firstOrFail();
-            $validated['facility_staff_uuid'] = $newFacilityStaff->uuid;
-            unset($validated['facility_id']);
-        }
-
-        $unavailability = $this->unavailability_service->update($unavailability, $validated);
+        $unavailability = $this->unavailabilityService->update(
+            $unavailability,
+            $request->validated(),
+        );
 
         return response()->json([
             'message' => __('Unavailability updated successfully.'),
-            'data' => new UnavailabilityResource($unavailability->load('facilityStaff.facility')),
+            'data' => new UnavailabilityResource(
+                $unavailability->load('facilityStaff.facility')
+            ),
         ]);
     }
 
-    public function destroy(Request $request, StaffUnavailability $unavailability): JsonResponse
-    {
+    public function destroy(
+        Request $request,
+        Facility $facility,
+        StaffUnavailability $unavailability,
+    ): JsonResponse {
         $staff = $request->user()->staff()->firstOrFail();
 
         FacilityStaff::query()
-            ->where('staff_id', $staff->id)
             ->where('id', $unavailability->facility_staff_id)
+            ->where('facility_id', $facility->id)
+            ->where('staff_id', $staff->id)
             ->firstOrFail();
 
-        $this->unavailability_service->destroy($unavailability);
+        $this->unavailabilityService->destroy($unavailability);
 
         return response()->json([
             'message' => __('Unavailability deleted successfully.'),

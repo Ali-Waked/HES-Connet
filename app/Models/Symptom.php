@@ -30,9 +30,9 @@ class Symptom extends Model
         ];
     }
 
-    public function facilityStaff(): BelongsToMany
+    public function specializations(): BelongsToMany
     {
-        return $this->belongsToMany(FacilityStaff::class, 'facility_staff_symptom')
+        return $this->belongsToMany(Specialization::class, 'specialization_symptom')
             ->withTimestamps();
     }
 

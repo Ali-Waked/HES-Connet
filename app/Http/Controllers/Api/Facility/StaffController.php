@@ -181,7 +181,7 @@ class StaffController extends Controller
                 return [
                     'uuid' => $facilityStaff->uuid,
                     'name' => $facilityStaff->staff->user->name,
-                    'specialization' => $facilityStaff->staff->specialization,
+                    'specialization' => $facilityStaff->staff->specialization?->getTranslations('name'),
                     'avatar' => $facilityStaff->staff->user->avatar,
                 ];
             });

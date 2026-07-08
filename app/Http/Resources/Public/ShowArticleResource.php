@@ -25,6 +25,7 @@ class ShowArticleResource extends JsonResource
             'author' => $this->whenLoaded('author', fn () => [
                 'uuid' => $this->author->uuid,
                 'name' => $this->author->getTranslations('name'),
+                'avatar' => $this->author->avatar,
             ]),
             'category' => new CategoryResource($this->whenLoaded('category')),
             'tags' => TagResource::collection($this->whenLoaded('tags')),

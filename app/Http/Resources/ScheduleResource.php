@@ -22,15 +22,19 @@ class ScheduleResource extends JsonResource
             'updated_at' => $this->updated_at,
             'facility_staff' => $this->whenLoaded('facilityStaff', fn () => [
                 'uuid' => $this->facilityStaff->uuid,
-                'staff' => $this->facilityStaff->whenLoaded('staff', fn () => [
-                    'uuid' => $this->facilityStaff->staff->uuid,
-                    'name' => $this->facilityStaff->staff->user?->getTranslations('name'),
-                    'specialization' => $this->facilityStaff->staff->getTranslations('specialization'),
-                ]),
-                'facility' => $this->facilityStaff->whenLoaded('facility', fn () => [
-                    'uuid' => $this->facilityStaff->facility->uuid,
-                    'name' => $this->facilityStaff->facility->getTranslations('name'),
-                ]),
+                'staff' => $this->facilityStaff->relationLoaded('staff')
+                    ? [
+                        'uuid' => $this->facilityStaff->staff->uuid,
+                        'name' => $this->facilityStaff->staff->user?->getTranslations('name'),
+                        'specialization' => $this->facilityStaff->staff->specialization?->getTranslations('name'),
+                    ]
+                    : null,
+                'facility' => $this->facilityStaff->relationLoaded('facility')
+                    ? [
+                        'uuid' => $this->facilityStaff->facility->uuid,
+                        'name' => $this->facilityStaff->facility->getTranslations('name'),
+                    ]
+                    : null,
             ]),
         ];
     }

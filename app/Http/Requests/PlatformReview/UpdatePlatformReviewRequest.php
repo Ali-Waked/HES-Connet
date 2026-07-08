@@ -16,8 +16,8 @@ class UpdatePlatformReviewRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'rating' => ['sometimes', 'required', 'integer', 'min:1', 'max:5'],
-            'comment' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'comment' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

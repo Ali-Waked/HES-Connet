@@ -106,4 +106,9 @@ class Article extends Model
     {
         return $query->where('status', ArticleStatus::PUBLISHED);
     }
+
+    public function scopeForFacility(Builder $query, int $facilityId): Builder
+    {
+        return $query->whereHas('author.staff.facilityStaff', fn ($q) => $q->where('facility_id', $facilityId));
+    }
 }

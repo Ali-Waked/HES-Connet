@@ -22,7 +22,7 @@ use Spatie\Translatable\HasTranslations;
  * @property-read Collection<int, User> $users
  * @property-read Collection<int, Permission> $permissions
  */
-#[Translatable(['name'])]
+#[Translatable(['name', 'description'])]
 #[Fillable(['name', 'slug', 'scope', 'description', 'is_system', 'is_active'])]
 class Role extends Model
 {

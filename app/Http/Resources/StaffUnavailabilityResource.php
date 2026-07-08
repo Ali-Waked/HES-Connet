@@ -18,7 +18,9 @@ class StaffUnavailabilityResource extends JsonResource
             'reason' => $this->reason,
             'facility_staff' => $this->whenLoaded('facilityStaff', fn () => [
                 'uuid' => $this->facilityStaff->uuid,
-                'staff' => new StaffListResource($this->facilityStaff->whenLoaded('staff')),
+                'staff' => $this->facilityStaff->relationLoaded('staff')
+                    ? new StaffListResource($this->facilityStaff->staff)
+                    : null,
             ]),
         ];
     }

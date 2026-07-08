@@ -15,6 +15,7 @@ class PrescriptionController extends Controller
             ->with(['appointment.facilityStaff.staff.user', 'items.medicine', 'appointment.patient.user'])
             ->latest()
             ->paginate((int) $request->get('per_page', 15));
+        info($prescriptions);
 
         return new PrescriptionCollection($prescriptions);
     }

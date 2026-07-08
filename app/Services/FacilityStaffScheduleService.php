@@ -14,8 +14,8 @@ class FacilityStaffScheduleService
     public function index(Facility $facility): Collection
     {
         return StaffSchedule::query()
-            ->with('staff')
-            ->where('facility_id', $facility->id)
+            ->with('facilityStaff.staff')
+            ->whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facility->id))
             ->latest()
             ->get();
     }
@@ -25,26 +25,41 @@ class FacilityStaffScheduleService
         StaffSchedule $staffSchedule,
     ): StaffSchedule {
         return $this->ensureBelongsToFacility($facility, $staffSchedule)
-            ->load('staff');
+            ->load('facilityStaff.staff');
     }
 
     public function store(
         Facility $facility,
         array $data,
     ): StaffSchedule {
-        $staff = $facility->staff()
-            ->where('uuid', $data['staff_uuid'])
+        $facilityStaff = $facility->facilityStaff()
+            ->whereHas('staff', fn ($q) => $q->where('uuid', $data['staff_uuid']))
             ->firstOrFail();
 
-        return StaffSchedule::create([
-            'facility_id' => $facility->id,
-            'staff_id' => $staff->id,
-            'days_of_week' => $data['days_of_week'],
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
-            'slot_duration' => $data['slot_duration'],
-            'is_active' => $data['is_active'] ?? true,
-        ]);
+        StaffSchedule::where('facility_staff_id', $facilityStaff->id)
+            ->whereIn('day_of_week', $data['days_of_week'])
+            ->delete();
+
+        $now = now();
+
+        $rows = collect($data['days_of_week'])
+            ->map(fn ($day) => [
+                'facility_staff_id' => $facilityStaff->id,
+                'day_of_week' => $day,
+                'start_time' => $data['start_time'],
+                'end_time' => $data['end_time'],
+                'slot_duration' => $data['slot_duration'],
+                'is_active' => $data['is_active'] ?? true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])
+            ->all();
+
+        StaffSchedule::insert($rows);
+
+        return StaffSchedule::where('facility_staff_id', $facilityStaff->id)
+            ->whereIn('day_of_week', $data['days_of_week'])
+            ->first();
     }
 
     public function update(
@@ -58,18 +73,41 @@ class FacilityStaffScheduleService
         );
 
         if (isset($data['staff_uuid'])) {
-            $staff = $facility->staff()
-                ->where('uuid', $data['staff_uuid'])
-                ->firstOrFail();
+            $staffSchedule->facility_staff_id = $facility->facilityStaff()
+                ->whereHas('staff', fn ($query) => $query->where('uuid', $data['staff_uuid']))
+                ->value('id');
 
-            $data['staff_id'] = $staff->id;
+            unset($data['staff_uuid']);
         }
 
-        unset($data['staff_uuid']);
+        $days = $data['days_of_week'] ?? null;
+        unset($data['days_of_week']);
 
-        $staffSchedule->update($data);
+        $staffSchedule->fill($data)->save();
 
-        return $staffSchedule->fresh('staff');
+        if ($days !== null) {
+            StaffSchedule::where('facility_staff_id', $staffSchedule->facility_staff_id)
+                ->delete();
+
+            $now = now();
+
+            $rows = collect($days)
+                ->map(fn ($day) => [
+                    'facility_staff_id' => $staffSchedule->facility_staff_id,
+                    'day_of_week' => $day,
+                    'start_time' => $staffSchedule->start_time,
+                    'end_time' => $staffSchedule->end_time,
+                    'slot_duration' => $staffSchedule->slot_duration,
+                    'is_active' => $staffSchedule->is_active,
+                    'created_at' => $staffSchedule->created_at,
+                    'updated_at' => $now,
+                ])
+                ->all();
+
+            StaffSchedule::insert($rows);
+        }
+
+        return $staffSchedule->load('facilityStaff.staff');
     }
 
     public function destroy(
@@ -86,7 +124,7 @@ class FacilityStaffScheduleService
         Facility $facility,
         StaffSchedule $staffSchedule,
     ): StaffSchedule {
-        if ($staffSchedule->facility_id !== $facility->id) {
+        if ($staffSchedule->facilityStaff->facility_id !== $facility->id) {
             throw new NotFoundHttpException;
         }
 

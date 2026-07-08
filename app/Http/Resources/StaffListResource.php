@@ -15,7 +15,7 @@ class StaffListResource extends JsonResource
             'uuid' => $this->user->uuid,
             'full_name' => $this->user->name,
             'email' => $this->user->email,
-            'specialization' => $this->specialization,
+            'specialization' => $this->specialization?->getTranslations('name'),
             'years_of_experience' => $this->experience_years,
             'consultation_fee' => $this->consultation_fee,
             'status' => $this->status?->value,

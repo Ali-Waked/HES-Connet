@@ -18,7 +18,7 @@ class DoctorResource extends JsonResource
             'uuid' => $this->uuid,
             'user_uuid' => $this->user->uuid,
             'name' => $this->user?->getTranslations('name'),
-            'specialization' => $this->getTranslations('specialization'),
+            'specialization' => $this->specialization?->getTranslations('name'),
             'avatar' => $this->user->avatar,
             'cover_image' => $this->user->cover_image,
             'bio' => $this->getTranslations('bio'),

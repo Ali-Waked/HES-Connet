@@ -33,18 +33,20 @@ class DoctorController extends Controller
                         ->where('name->en', 'like', "%{$search}%")
                         ->orWhere('name->ar', 'like', "%{$search}%")
                     )
-                        ->orWhere('specialization->en', 'like', "%{$search}%")
-                        ->orWhere('specialization->ar', 'like', "%{$search}%")
+                        ->orWhereHas('specialization', fn ($sq) => $sq
+                            ->where('name->en', 'like', "%{$search}%")
+                            ->orWhere('name->ar', 'like', "%{$search}%")
+                        )
                         ->orWhere('bio->en', 'like', "%{$search}%")
                         ->orWhere('bio->ar', 'like', "%{$search}%");
                 })
             )
             ->when(
                 $request->specialization,
-                fn ($query, string $spec) => $query->where(function ($q) use ($spec) {
-                    $q->where('specialization->en', 'like', "%{$spec}%")
-                        ->orWhere('specialization->ar', 'like', "%{$spec}%");
-                })
+                fn ($query, string $spec) => $query->whereHas('specialization', fn ($sq) => $sq
+                    ->where('name->en', 'like', "%{$spec}%")
+                    ->orWhere('name->ar', 'like', "%{$spec}%")
+                )
             )
             ->when(
                 $request->facility_id,

@@ -16,7 +16,7 @@ class DoctorCardResource extends JsonResource
             'name' => $this->user?->getTranslations('name'),
             'avatar' => $this->user?->avatar,
             'cover_image' => $this->user?->cover_image,
-            'specialization' => $this->getTranslations('specialization'),
+            'specialization' => $this->specialization?->getTranslations('name'),
         ];
     }
 }

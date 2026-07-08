@@ -21,7 +21,6 @@ use Illuminate\Support\Facades\Storage;
 class FacilityImage extends Model
 {
     use Auditable;
-
     use HasUuids;
 
     public $timestamps = false;

@@ -1,121 +1,137 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Department;
 use App\Models\Facility;
 use App\Models\FacilityStaff;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Collection;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class DepartmentService
 {
-    public function __construct(private readonly UuidResolver $uuid_resolver)
+    public function paginate(int $perPage = 15, ?string $search = null, ?string $facilityUuid = null): LengthAwarePaginator
     {
-        //
-    }
-
-    public function paginate(int $perPage = 15, ?string $search = null, ?int $facilityId = null): LengthAwarePaginator
-    {
-
         return Department::query()
-            ->with([
-                'head',
-                'facilityStaff.facility',
-            ])
-            ->when(
-                $search,
-                fn ($query) => $query->where(function ($q) use ($search) {
-                    $q->where('name->en', 'like', "%{$search}%")
-                        ->orWhere('name->ar', 'like', "%{$search}%");
-                })
-            )
-            ->when(
-                $facilityId,
-                fn ($query) => $query->where(
-                    'facility_id',
-                    $facilityId
-                )
-            )
+            ->with('head.staff.user', 'facility')
+            ->when($facilityUuid, fn ($q, $uuid) => $q->whereHas('facility', fn ($q) => $q->where('uuid', $uuid)))
+            ->when($search, fn ($q, $search) => $q->where(function ($q) use ($search) {
+                $q->where('name->en', 'like', "%{$search}%")
+                    ->orWhere('name->ar', 'like', "%{$search}%");
+            }))
             ->latest()
             ->paginate($perPage);
     }
 
-    public function create(array $data): Department
+    public function getStats(): array
     {
-        if (isset($data['image'])) {
-            $data['image'] = $data['image']->store('departments', ['disk' => 'public']);
-        }
-        $facility = Facility::whereUuid($data['facility_id'])->firstOrFail();
-        $head = FacilityStaff::query()->where('facility_id', $facility->id)
-            ->where('uuid', $data['head_facility_staff_id'])
-            ->whereDoesntHave('headedDepartment')
-            ->firstOrFail();
+        return [
+            'total_departments' => Department::count(),
+            'active_departments' => Department::where('is_active', true)->count(),
+            'inactive_departments' => Department::where('is_active', false)->count(),
+        ];
+    }
 
-        $data['head_facility_staff_id'] = $head->id;
+    public function dashboardCreate(array $data): Department
+    {
+        if (isset($data['head_facility_staff_id'])) {
+            $head = FacilityStaff::where('uuid', $data['head_facility_staff_id'])->firstOrFail();
+            $data['head_facility_staff_id'] = $head->id;
+        }
 
         return Department::create($data);
     }
 
-    public function show(Department $department): Department
+    public function dashboardShow(Department $department): Department
     {
-        return $department->load([
-            'facility',
-            'head',
-        ]);
+        return $department->load('head.staff.user', 'facility');
     }
 
-    public function update(Department $department, array $data): Department
+    public function dashboardUpdate(Department $department, array $data): Department
     {
-        $oldImage = $department->image;
-
-        $data['facility_id'] = $this->uuid_resolver->resolve(
-            Facility::class,
-            $data['facility_id']
-        );
-
-        $newImage = null;
-
-        if (! empty($data['image'])) {
-            $newImage = $data['image']->store('departments', [
-                'disk' => 'public',
-            ]);
-
-            $data['image'] = $newImage;
-        } else {
-            unset($data['image']);
+        if (isset($data['head_facility_staff_id'])) {
+            $head = FacilityStaff::where('uuid', $data['head_facility_staff_id'])->firstOrFail();
+            $data['head_facility_staff_id'] = $head->id;
         }
 
         $department->update($data);
 
-        if ($newImage && $oldImage) {
-            Storage::disk('public')->delete($oldImage);
-        }
-
-        return $department->refresh();
+        return $department->fresh('head.staff.user', 'facility');
     }
 
-    public function destroy(
-        Department $department
-    ): void {
-
+    public function dashboardDestroy(Department $department): void
+    {
         $department->delete();
     }
 
-    public function getStats(): array
+    public function index(Facility $facility): Collection
     {
-        $stats = Department::query()
-            ->selectRaw('
-                        COUNT(*) as total,
-                        SUM(is_active = 1) as active,
-                        SUM(is_active = 0) as inactive
-                    ')
-            ->first();
+        return Department::query()
+            ->where('facility_id', $facility->id)
+            ->with('head.staff.user')
+            ->latest()
+            ->get();
+    }
 
-        return [
-            'total' => (int) $stats->total,
-            'active' => (int) $stats->active,
-            'inactive' => (int) $stats->inactive,
-        ];
+    public function show(Facility $facility, Department $department): Department
+    {
+        return $this->ensureBelongsToFacility($facility, $department)
+            ->load('head.staff.user');
+    }
+
+    public function store(Facility $facility, array $data): Department
+    {
+        $data['facility_id'] = $facility->id;
+
+        if (isset($data['head_facility_staff_uuid'])) {
+            $head = $facility->facilityStaff()
+                ->where('uuid', $data['head_facility_staff_uuid'])
+                ->firstOrFail();
+
+            $data['head_facility_staff_id'] = $head->id;
+            unset($data['head_facility_staff_uuid']);
+        }
+
+        return Department::create($data);
+    }
+
+    public function update(
+        Facility $facility,
+        Department $department,
+        array $data,
+    ): Department {
+        $department = $this->ensureBelongsToFacility($facility, $department);
+
+        if (isset($data['head_facility_staff_uuid'])) {
+            $head = $facility->facilityStaff()
+                ->where('uuid', $data['head_facility_staff_uuid'])
+                ->firstOrFail();
+
+            $data['head_facility_staff_id'] = $head->id;
+            unset($data['head_facility_staff_uuid']);
+        }
+
+        $department->update($data);
+
+        return $department->fresh('head.staff.user');
+    }
+
+    public function destroy(Facility $facility, Department $department): void
+    {
+        $this->ensureBelongsToFacility($facility, $department)->delete();
+    }
+
+    private function ensureBelongsToFacility(
+        Facility $facility,
+        Department $department,
+    ): Department {
+        if ($department->facility_id !== $facility->id) {
+            throw new NotFoundHttpException;
+        }
+
+        return $department;
     }
 }

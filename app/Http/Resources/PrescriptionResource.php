@@ -39,11 +39,11 @@ class PrescriptionResource extends JsonResource
                 'name' => $facility->getTranslations('name'),
                 'cover_image' => $facility->cover_image,
             ] : null,
-            'patient' => $this->whenLoaded('appointment.patient.user', fn () => [
+            'patient' => $this->appointment?->patient?->user ? [
                 'uuid' => $this->appointment->patient->uuid,
-                'name' => $this->appointment->patient->user->name,
+                'name' => $this->appointment->patient->user->getTranslations('name'),
                 'avatar' => $this->appointment->patient->user->avatar,
-            ]),
+            ] : null,
             'items' => PrescriptionItemResource::collection($this->whenLoaded('items')),
         ];
     }

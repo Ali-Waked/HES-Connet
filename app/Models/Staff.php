@@ -24,11 +24,12 @@ use Spatie\Translatable\HasTranslations;
 /**
  * @property-read string $uuid
  * @property int $user_id
- * @property array|null $specialization
+ * @property int|null $specialization_id
  * @property int|null $experience_years
  * @property array|null $bio
  * @property float|null $consultation_fee
  * @property-read User $user
+ * @property-read Specialization|null $specialization
  * @property-read Collection<int, FacilityStaff> $facilityStaff
  * @property-read Collection<int, Department> $departmentsAsHead
  * @property-read Collection<int, StaffSchedule> $schedules
@@ -38,8 +39,8 @@ use Spatie\Translatable\HasTranslations;
  * @property-read Collection<int, Article> $articles
  * @property-read Collection<int, Review> $reviews
  */
-#[Fillable(['user_id', 'profession_id', 'specialization', 'experience_years', 'bio', 'consultation_fee', 'status', 'staff_position_id'])]
-#[Translatable(['specialization', 'bio'])]
+#[Fillable(['user_id', 'profession_id', 'specialization_id', 'experience_years', 'bio', 'consultation_fee', 'status', 'staff_position_id'])]
+#[Translatable(['bio'])]
 class Staff extends Model
 {
     /** @use HasFactory<StaffFactory> */
@@ -77,6 +78,11 @@ class Staff extends Model
     public function profession(): BelongsTo
     {
         return $this->belongsTo(Profession::class);
+    }
+
+    public function specialization(): BelongsTo
+    {
+        return $this->belongsTo(Specialization::class);
     }
 
     public function facilityStaff(): HasMany
@@ -124,14 +130,12 @@ class Staff extends Model
     public function schedules(): HasManyThrough
     {
         return $this->hasManyThrough(
-            StaffSchedule::class, // Final Model
-            FacilityStaff::class, // Intermediate Model
-
-            'staff_id',           // FK on facility_staff
-            'facility_staff_id',  // FK on staff_schedules
-
-            'id',                 // PK on staff
-            'id'                  // PK on facility_staff
+            StaffSchedule::class,
+            FacilityStaff::class,
+            'staff_id',
+            'facility_staff_id',
+            'id',
+            'id'
         );
     }
 
@@ -169,7 +173,10 @@ class Staff extends Model
 
     public function scopeOfSpecialization(Builder $query, string $specialization): Builder
     {
-        return $query->where('specialization', 'like', "%{$specialization}%");
+        return $query->whereHas('specialization', fn (Builder $q) => $q
+            ->where('name->en', 'like', "%{$specialization}%")
+            ->orWhere('name->ar', 'like', "%{$specialization}%")
+        );
     }
 
     public function scopeSearch(Builder $query, string $term): Builder
@@ -190,11 +197,10 @@ class Staff extends Model
 
     public function getAvailableWorkspaces(): array
     {
-        return $this->staff
-            ->facilityStaff
+        return $this->facilityStaff
             ->map(function ($membership) {
                 return [
-                    'id' => $membership->id, // facility_staff.id
+                    'id' => $membership->id,
                     'facility' => [
                         'id' => $membership->facility->id,
                         'uuid' => $membership->facility->uuid,

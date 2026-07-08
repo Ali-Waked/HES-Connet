@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ReviewReply extends Model
 {
     use Auditable;
-
     use HasUuids;
 
     public function uniqueIds(): array

@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -104,12 +103,6 @@ class FacilityStaff extends Pivot
     public function unavailabilities(): HasMany
     {
         return $this->hasMany(StaffUnavailability::class, 'facility_staff_id');
-    }
-
-    public function symptoms(): BelongsToMany
-    {
-        return $this->belongsToMany(Symptom::class, 'facility_staff_symptom')
-            ->withTimestamps();
     }
 
     public function headedDepartment()

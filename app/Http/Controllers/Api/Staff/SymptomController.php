@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Staff;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\Staff\UpdateStaffSymptomsRequest;
-use App\Http\Resources\FacilityStaffResource;
+use App\Http\Requests\Api\Staff\UpdateSpecializationSymptomsRequest;
 use App\Http\Resources\SymptomResource;
-use App\Models\FacilityStaff;
+use App\Models\Specialization;
 use App\Services\SymptomService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -29,16 +28,21 @@ class SymptomController extends Controller
         );
     }
 
-    public function update(UpdateStaffSymptomsRequest $request, FacilityStaff $facility_staff): JsonResponse
+    public function update(UpdateSpecializationSymptomsRequest $request, Specialization $specialization): JsonResponse
     {
-        $facilityStaff = $this->symptom_service->syncSymptoms(
-            $facility_staff,
+        $specialization = $this->symptom_service->syncSpecializationSymptoms(
+            $specialization,
             $request->validated('symptom_ids'),
         );
 
         return response()->json([
             'message' => __('Symptoms updated successfully.'),
-            'data' => new FacilityStaffResource($facilityStaff),
+            'data' => [
+                'id' => $specialization->id,
+                'uuid' => $specialization->uuid,
+                'name' => $specialization->getTranslations('name'),
+                'symptoms' => SymptomResource::collection($specialization->symptoms),
+            ],
         ]);
     }
 }

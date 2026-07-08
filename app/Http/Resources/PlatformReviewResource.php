@@ -23,6 +23,7 @@ class PlatformReviewResource extends JsonResource
             'replied_at' => $this->replied_at,
             'status' => $this->status,
             'is_featured' => $this->is_featured,
+            'editable' => $this->editable,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'user' => $this->whenLoaded('user', fn () => [

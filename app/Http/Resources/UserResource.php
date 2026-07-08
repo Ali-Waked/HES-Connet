@@ -11,6 +11,8 @@ class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        info($this->getAvailableWorkspaces());
+
         return [
             'id' => $this->id,
             'uuid' => $this->uuid,

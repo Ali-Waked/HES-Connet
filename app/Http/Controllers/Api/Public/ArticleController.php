@@ -28,7 +28,7 @@ class ArticleController extends Controller
                         ->orWhere('content->ar', 'like', "%{$search}%");
                 })
             )
-            ->when($request->category_id, fn ($q, $v) => $q->where('category_id', $v))
+            ->when($request->category, fn ($q, $uuid) => $q->whereHas('category', fn ($q) => $q->where('uuid', $uuid)))
             ->when($request->created_from, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($request->created_to, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->when(

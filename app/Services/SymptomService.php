@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Events\SymptomCreated;
 use App\Events\SymptomDeleted;
 use App\Events\SymptomUpdated;
-use App\Models\FacilityStaff;
+use App\Models\Specialization;
 use App\Models\Symptom;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -97,15 +97,15 @@ class SymptomService
             ->paginate($perPage);
     }
 
-    public function getAssignedSymptomIds(FacilityStaff $facilityStaff): Collection
+    public function getAssignedSymptomIds(Specialization $specialization): Collection
     {
-        return $facilityStaff->symptoms()->pluck('symptoms.id');
+        return $specialization->symptoms()->pluck('symptoms.id');
     }
 
-    public function syncSymptoms(FacilityStaff $facilityStaff, array $symptomIds): FacilityStaff
+    public function syncSpecializationSymptoms(Specialization $specialization, array $symptomIds): Specialization
     {
-        $facilityStaff->symptoms()->sync($symptomIds);
+        $specialization->symptoms()->sync($symptomIds);
 
-        return $facilityStaff->load('symptoms');
+        return $specialization->load('symptoms');
     }
 }

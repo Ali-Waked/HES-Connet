@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\ContactMessageSubmitted;
 use App\Models\ContactMessage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -33,7 +34,11 @@ class ContactMessageService
 
     public function create(array $data): ContactMessage
     {
-        return ContactMessage::create($data);
+        $contactMessage = ContactMessage::create($data);
+
+        event(new ContactMessageSubmitted($contactMessage));
+
+        return $contactMessage;
     }
 
     public function markAsRead(ContactMessage $contactMessage): ContactMessage

@@ -321,9 +321,15 @@ class User extends Authenticatable
         }
 
         $activeFs = $this->getActiveFacilityStaff();
-
-        if (! $activeFs || ! $activeFs->role) {
+        if (! $this->staff?->id) {
+            return null;
+        }
+        if ((! $activeFs || ! $activeFs->role)) {
             return '/select-workspace';
+        }
+
+        if (! $activeFs) {
+            return '/dashboard';
         }
 
         $facilityType = $activeFs->facility?->facility_type;

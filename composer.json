@@ -35,7 +35,11 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Ai/Tools/MedicalTools.php",
+            "app/Ai/Tools/SystemTools.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

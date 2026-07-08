@@ -65,8 +65,8 @@ class AppServiceProvider extends ServiceProvider
                 continue;
             }
 
-            $relativePath = str_replace($modelPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
-            $class = 'App\\Models\\' . str_replace(
+            $relativePath = str_replace($modelPath.DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $class = 'App\\Models\\'.str_replace(
                 [DIRECTORY_SEPARATOR, '.php'],
                 ['\\', ''],
                 $relativePath,

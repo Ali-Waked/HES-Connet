@@ -123,7 +123,7 @@ class StaffService
                     'user_id' => $user->id,
                 ],
                 [
-                    'specialization' => $data['specialization'] ?? null,
+                    'specialization_id' => $data['specialization_id'] ?? null,
                     'experience_years' => $data['experience_years'] ?? null,
                     'bio' => $data['bio'] ?? null,
                     'consultation_fee' => $data['consultation_fee'] ?? null,
@@ -258,7 +258,7 @@ class StaffService
 
             // 4. تحديث بيانات Staff (فقط الحقول المرسلة فعلاً)
             $staffPayload = array_intersect_key($data, array_flip([
-                'specialization', 'experience_years', 'bio', 'consultation_fee', 'staff_position_id',
+                'specialization_id', 'experience_years', 'bio', 'consultation_fee', 'staff_position_id',
             ]));
 
             if (! empty($staffPayload)) {

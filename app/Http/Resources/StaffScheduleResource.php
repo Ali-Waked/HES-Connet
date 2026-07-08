@@ -11,6 +11,8 @@ class StaffScheduleResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        info($this->day_of_week);
+
         return [
             'id' => $this->id,
             'day_of_week' => $this->day_of_week,
@@ -20,8 +22,12 @@ class StaffScheduleResource extends JsonResource
             'is_active' => $this->is_active,
             'facility_staff' => $this->whenLoaded('facilityStaff', fn () => [
                 'uuid' => $this->facilityStaff->uuid,
-                'staff' => new StaffListResource($this->facilityStaff->whenLoaded('staff')),
-                'facility' => new FacilityResource($this->facilityStaff->whenLoaded('facility')),
+                'staff' => $this->facilityStaff->relationLoaded('staff')
+                    ? new StaffListResource($this->facilityStaff->staff)
+                    : null,
+                'facility' => $this->facilityStaff->relationLoaded('facility')
+                    ? new FacilityResource($this->facilityStaff->facility)
+                    : null,
             ]),
         ];
     }

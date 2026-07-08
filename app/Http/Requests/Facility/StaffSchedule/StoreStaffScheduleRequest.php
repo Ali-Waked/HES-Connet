@@ -22,6 +22,8 @@ class StoreStaffScheduleRequest extends FormRequest
      */
     public function rules(): array
     {
+        info($this->all());
+
         return [
             'staff_uuid' => ['required', 'exists:staff,uuid'],
 

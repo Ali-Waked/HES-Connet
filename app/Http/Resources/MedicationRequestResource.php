@@ -18,11 +18,11 @@ class MedicationRequestResource extends JsonResource
             'dispensed_at' => $this->dispensed_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'patient' => $this->whenLoaded('patient.user', fn () => [
+            'patient' => $this->patient?->user ? [
                 'uuid' => $this->patient->uuid,
-                'name' => $this->patient->user->name,
+                'name' => $this->patient->user->getTranslations('name'),
                 'avatar' => $this->patient->user->avatar,
-            ]),
+            ] : null,
             'pharmacy' => $this->whenLoaded('facility', fn () => [
                 'uuid' => $this->facility->uuid,
                 'name' => $this->facility->getTranslations('name'),
@@ -32,10 +32,10 @@ class MedicationRequestResource extends JsonResource
                 'status' => $this->prescription->status?->value,
                 'notes' => $this->prescription->notes,
             ]),
-            'pharmacist' => $this->whenLoaded('pharmacist.user', fn () => [
+            'pharmacist' => $this->pharmacist?->user ? [
                 'uuid' => $this->pharmacist->uuid,
-                'name' => $this->pharmacist->user->name,
-            ]),
+                'name' => $this->pharmacist->user->getTranslations('name'),
+            ] : null,
         ];
     }
 }

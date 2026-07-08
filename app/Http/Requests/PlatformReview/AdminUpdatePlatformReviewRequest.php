@@ -16,7 +16,7 @@ class AdminUpdatePlatformReviewRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['sometimes', 'required', 'string', 'in:pending,approved,rejected'],
+            'status' => ['sometimes', 'required', 'string', 'in:pending,approved,rejected,hidden'],
             'is_featured' => ['sometimes', 'boolean'],
         ];
     }

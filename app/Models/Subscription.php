@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Traits\Auditable;
+use Carbon\Carbon;
 use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;

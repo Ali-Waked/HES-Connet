@@ -59,7 +59,7 @@ class StaffResource extends JsonResource
                 })->values()
             ),
 
-            'specialization' => $this->getTranslations('specialization'),
+            'specialization' => $this->specialization?->getTranslations('name'),
 
             'bio' => $this->getTranslations('bio'),
         ];

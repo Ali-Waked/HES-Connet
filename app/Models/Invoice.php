@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class Invoice extends Model
 {
     use Auditable;
-
     use HasUuids;
 
     protected function casts(): array

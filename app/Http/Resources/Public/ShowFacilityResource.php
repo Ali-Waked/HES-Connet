@@ -32,7 +32,7 @@ class ShowFacilityResource extends JsonResource
             'head_staff' => $this->whenLoaded('headStaff', fn () => [
                 'uuid' => $this->headStaff->uuid,
                 'name' => $this->headStaff->user?->getTranslations('name'),
-                'specialization' => $this->headStaff->getTranslations('specialization'),
+                'specialization' => $this->headStaff->specialization?->getTranslations('name'),
             ]),
             'images' => $this->whenLoaded('facilityImages', fn () => $this->facilityImages->map(fn ($image) => [
                 'id' => $image->id,
@@ -47,7 +47,7 @@ class ShowFacilityResource extends JsonResource
                 'id' => $fs->staff->id,
                 'uuid' => $fs->staff->uuid,
                 'name' => $fs->staff->user?->getTranslations('name'),
-                'specialization' => $fs->staff->getTranslations('specialization'),
+                'specialization' => $fs->staff->specialization?->getTranslations('name'),
                 'position' => $fs->position,
             ])),
             'reviews' => FacilityReviewResource::collection($this->whenLoaded('publicReviews')),
