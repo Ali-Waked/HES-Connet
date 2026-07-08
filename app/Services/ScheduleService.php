@@ -29,17 +29,16 @@ class ScheduleService
         return $query->latest()->paginate($perPage);
     }
 
-    public function create(array $data): void
+    public function create(array $data): StaffSchedule
     {
         $facilityStaff = $this->uuid_resolver->model(
             FacilityStaff::class,
             $data['facility_staff_uuid']
         );
 
-        $rows = [];
+        $schedule = null;
 
         foreach ($data['days_of_week'] as $day) {
-
             $this->preventOverlap(
                 staffId: $facilityStaff->staff_id,
                 dayOfWeek: $day,
@@ -47,19 +46,19 @@ class ScheduleService
                 endTime: $data['end_time'],
             );
 
-            $rows[] = [
+            $created = StaffSchedule::create([
                 'facility_staff_id' => $facilityStaff->id,
                 'day_of_week' => $day,
                 'start_time' => $data['start_time'],
                 'end_time' => $data['end_time'],
                 'slot_duration' => $data['slot_duration'],
                 'is_active' => $data['is_active'] ?? true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+            ]);
+
+            $schedule ??= $created;
         }
 
-        StaffSchedule::insert($rows);
+        return $schedule;
     }
 
     public function show(StaffSchedule $schedule): StaffSchedule
