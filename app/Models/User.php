@@ -6,8 +6,10 @@ namespace App\Models;
 
 use App\Enums\LocaleType;
 use App\Enums\Provider;
+use App\Notifications\SendEmailVerificationNotification;
 use App\Traits\Auditable;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -46,7 +48,7 @@ use Spatie\Translatable\HasTranslations;
 #[Fillable(['name', 'email', 'password', 'provider', 'provider_id', 'last_seen_at', 'active_workspace_id', 'city_id', 'locale', 'email_notifications', 'push_notifications', 'sms_notifications'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 #[Translatable(['name'])]
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use Auditable, HasApiTokens, HasFactory, HasUuids, Notifiable, SoftDeletes;
@@ -67,6 +69,14 @@ class User extends Authenticatable
             'push_notifications' => 'boolean',
             'sms_notifications' => 'boolean',
         ];
+    }
+
+    /**
+     * Send the email verification notification using our custom SPA-friendly notification.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new SendEmailVerificationNotification);
     }
 
     public function uniqueIds(): array
