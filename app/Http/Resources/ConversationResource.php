@@ -21,6 +21,12 @@ class ConversationResource extends JsonResource
             'total_tokens' => $this->total_tokens,
             'last_activity_at' => $this->last_activity_at?->toIso8601String(),
             'summary' => $this->summary,
+            'extracted_symptoms' => $this->extracted_symptoms ?? [],
+            'estimated_specialty' => $this->estimated_specialty,
+            'urgency' => $this->urgency,
+            'confidence' => $this->confidence,
+            'triage_status' => $this->triage_status,
+            'recommended_at' => $this->recommended_at?->toIso8601String(),
             'last_message_preview' => $this->relationLoaded('lastMessage')
                 ? Str::limit($this->lastMessage->first()?->content, 120)
                 : null,

@@ -56,4 +56,26 @@ return [
     |
     */
     'default_title' => env('CHAT_DEFAULT_TITLE', 'New Consultation'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Minimum messages before doctor recommendation
+    |--------------------------------------------------------------------------
+    |
+    | The minimum number of messages required before the "Find the Right Doctor"
+    | button becomes available to the patient.
+    |
+    */
+    'min_messages_for_recommendation' => env('CHAT_MIN_MESSAGES_FOR_RECOMMENDATION', 4),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tiage confidence threshold
+    |--------------------------------------------------------------------------
+    |
+    | The minimum confidence score required from the AI triage analysis
+    | before the recommendation button is shown.
+    |
+    */
+    'triage_confidence_threshold' => env('CHAT_TRIAGE_CONFIDENCE_THRESHOLD', 0.5),
 ];

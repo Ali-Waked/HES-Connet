@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Patient;
 
+use App\Enums\AccountStatus;
 use App\Models\AiMedicalConversation;
 use App\Models\AiMedicalMessage;
+use App\Models\Facility;
+use App\Models\FacilityStaff;
+use App\Models\Role;
+use App\Models\Specialization;
+use App\Models\Staff;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -206,5 +212,82 @@ class AiConversationTest extends TestCase
             ->assertCreated();
 
         $this->assertDatabaseHas('ai_medical_conversations', ['user_id' => $user->id]);
+    }
+
+    public function test_recommend_doctor_successfully(): void
+    {
+        $user = User::factory()->create();
+
+        // 1. Create a Specialization
+        $specialization = Specialization::create([
+            'name' => [
+                'en' => 'General Practice',
+                'ar' => 'طب عام',
+            ],
+            'description' => [
+                'en' => 'General health care',
+                'ar' => 'رعاية صحية عامة',
+            ],
+        ]);
+
+        // 2. Create a Role
+        $role = Role::create([
+            'name' => [
+                'en' => 'Doctor Portal User',
+                'ar' => 'مستخدم بوابة الطبيب',
+            ],
+            'slug' => 'doctor_portal_user',
+            'scope' => 'facility',
+            'is_active' => true,
+        ]);
+
+        // 3. Create a Facility
+        $facility = Facility::factory()->create([
+            'name' => [
+                'en' => 'City Clinic',
+                'ar' => 'عيادة المدينة',
+            ],
+        ]);
+
+        // 4. Create Staff (Doctor)
+        $staffUser = User::factory()->create();
+        $staff = Staff::factory()->create([
+            'user_id' => $staffUser->id,
+            'specialization_id' => $specialization->id,
+            'status' => AccountStatus::ACTIVE,
+        ]);
+
+        // 5. Link Staff to Facility
+        FacilityStaff::create([
+            'staff_id' => $staff->id,
+            'facility_id' => $facility->id,
+            'role_id' => $role->id,
+            'joined_at' => now(),
+            'ended_at' => null,
+        ]);
+
+        // 6. Create conversation
+        $conversation = AiMedicalConversation::create([
+            'user_id' => $user->id,
+            'title' => 'Triage Conversation',
+            'status' => 'active',
+            'message_count' => 4,
+            'estimated_specialty' => 'General Practice',
+            'triage_status' => 'ready',
+        ]);
+
+        $response = $this->actingAs($user, 'web')
+            ->postJson("/api/patient/ai/conversations/{$conversation->uuid}/recommend-doctor");
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    'triage' => ['specialty', 'urgency', 'confidence', 'symptoms'],
+                    'doctors',
+                ],
+            ]);
+
+        $this->assertCount(1, $response->json('data.doctors'));
+        $this->assertEquals('City Clinic', $response->json('data.doctors.0.facility.name'));
     }
 }

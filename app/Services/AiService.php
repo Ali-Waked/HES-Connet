@@ -133,6 +133,31 @@ class AiService
         return $result;
     }
 
+    public function askRaw(string $systemPrompt, string $userMessage, ?int $userId = null): string
+    {
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user', 'content' => $userMessage],
+        ];
+
+        $result = $this->provider->chatWithMessages($messages);
+
+        $response = $result['content'];
+
+        AiPrompted::dispatch(
+            userId: $userId,
+            agent: 'MedicalTriage',
+            prompt: $userMessage,
+            response: $response,
+            metadata: [
+                'prompt_tokens' => $result['prompt_tokens'] ?? 0,
+                'completion_tokens' => $result['completion_tokens'] ?? 0,
+            ],
+        );
+
+        return $response;
+    }
+
     private function parseStructuredResponse(string $content): array
     {
         $jsonStart = strpos($content, '{');

@@ -23,6 +23,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'total_tokens',
     'last_activity_at',
     'summary',
+    'extracted_symptoms',
+    'estimated_specialty',
+    'urgency',
+    'confidence',
+    'triage_status',
+    'recommended_at',
 ])]
 class AiMedicalConversation extends Model
 {
@@ -45,8 +51,11 @@ class AiMedicalConversation extends Model
     {
         return [
             'last_activity_at' => 'datetime',
+            'recommended_at' => 'datetime',
             'message_count' => 'integer',
             'total_tokens' => 'integer',
+            'extracted_symptoms' => 'array',
+            'confidence' => 'float',
         ];
     }
 
@@ -70,5 +79,36 @@ class AiMedicalConversation extends Model
     public function scopeActive($query): void
     {
         $query->where('status', 'active');
+    }
+
+    public function isReadyForRecommendation(): bool
+    {
+        return $this->triage_status === 'ready';
+    }
+
+    public function markAsReady(): void
+    {
+        $this->update([
+            'triage_status' => 'ready',
+        ]);
+    }
+
+    public function markAsRecommended(): void
+    {
+        $this->update([
+            'triage_status' => 'recommended',
+            'recommended_at' => now(),
+        ]);
+    }
+
+    public function updateTriageData(array $data): void
+    {
+        $this->update(array_filter([
+            'extracted_symptoms' => $data['symptoms'] ?? null,
+            'estimated_specialty' => $data['specialty'] ?? null,
+            'urgency' => $data['urgency'] ?? null,
+            'confidence' => $data['confidence'] ?? null,
+            'triage_status' => ($data['ready_for_recommendation'] ?? false) ? 'ready' : $this->triage_status,
+        ], fn ($v) => $v !== null));
     }
 }
