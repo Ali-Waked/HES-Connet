@@ -10,8 +10,8 @@ use App\Models\Specialization;
 use App\Models\Staff;
 use App\Models\StaffPosition;
 use App\Models\User;
-use App\Models\UserProfiles;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class StaffSeeder extends Seeder
@@ -60,7 +60,6 @@ class StaffSeeder extends Seeder
             ]);
         }
 
-        // Create additional staff from existing users
         $existingStaffUserIds = collect($staffRecords)->pluck('user.id')->filter()->toArray();
         $remainingUsers = User::whereNotIn('id', $existingStaffUserIds)
             ->where('email', '!=', 'admin@gmail.com')
@@ -81,32 +80,71 @@ class StaffSeeder extends Seeder
             ]);
         }
 
-        // Create remaining staff with new users to reach ~2000
         $targetCount = 2000 - Staff::count();
-        $chunkSize = 100;
-        $chunks = (int) ceil($targetCount / $chunkSize);
+        if ($targetCount > 0) {
+            $password = Hash::make('password');
+            $now = now()->format('Y-m-d H:i:s');
+            $batchSize = 500;
+            $batches = (int) ceil($targetCount / $batchSize);
 
-        for ($c = 0; $c < $chunks; $c++) {
-            $size = min($chunkSize, $targetCount - ($c * $chunkSize));
-            if ($size <= 0) {
-                break;
+            for ($c = 0; $c < $batches; $c++) {
+                $size = min($batchSize, $targetCount - ($c * $batchSize));
+                if ($size <= 0) {
+                    break;
+                }
+
+                $userRows = [];
+                $emails = [];
+                for ($i = 0; $i < $size; $i++) {
+                    $email = fake()->unique()->safeEmail();
+                    $emails[] = $email;
+                    $userRows[] = [
+                        'uuid' => (string) Str::uuid(),
+                        'name' => json_encode(['en' => fake()->name()]),
+                        'email' => $email,
+                        'email_verified_at' => $now,
+                        'password' => $password,
+                        'remember_token' => Str::random(10),
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+
+                \DB::table('users')->insert($userRows);
+                $userIds = \DB::table('users')->whereIn('email', $emails)->pluck('id')->toArray();
+
+                $staffRows = [];
+                $profileRows = [];
+                foreach ($userIds as $userId) {
+                    $staffRows[] = [
+                        'uuid' => (string) Str::uuid(),
+                        'user_id' => $userId,
+                        'profession_id' => fake()->randomElement([$doctorProfession?->id, $nurseProfession?->id, $pharmacistProfession?->id]),
+                        'specialization_id' => $specializationIds[array_rand($specializationIds)],
+                        'experience_years' => fake()->numberBetween(1, 30),
+                        'bio' => json_encode(['en' => fake()->paragraph(), 'ar' => fake('ar_SA')->paragraph()]),
+                        'consultation_fee' => fake()->randomFloat(2, 20, 200),
+                        'status' => AccountStatus::ACTIVE->value,
+                        'staff_position_id' => $positions[array_rand($positions)],
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+
+                    $profileRows[] = [
+                        'user_id' => $userId,
+                        'profile_image' => 'https://images.unsplash.com/photo-'.fake()->randomElement([
+                            '1612349317150-e413f6a5b16d', '1594824476967-48c8b964273f',
+                            '1537368910025-700350fe46c7', '1559839734-2b71ea197ec2',
+                            '1507003211169-0a1dd7228f2d', '1524504388940-b1c63c8c0f52',
+                        ]).'?w=400',
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+
+                \DB::table('staff')->insert($staffRows);
+                \DB::table('user_profiles')->insert($profileRows);
             }
-
-            Staff::factory()
-                ->count($size)
-                ->create()
-                ->each(function (Staff $staff) {
-                    $profileImage = 'https://images.unsplash.com/photo-'.fake()->randomElement([
-                        '1612349317150-e413f6a5b16d', '1594824476967-48c8b964273f',
-                        '1537368910025-700350fe46c7', '1559839734-2b71ea197ec2',
-                        '1507003211169-0a1dd7228f2d', '1524504388940-b1c63c8c0f52',
-                    ]).'?w=400';
-
-                    UserProfiles::updateOrCreate(
-                        ['user_id' => $staff->user_id],
-                        ['profile_image' => $profileImage]
-                    );
-                });
         }
     }
 }
