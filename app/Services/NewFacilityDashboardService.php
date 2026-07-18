@@ -6,15 +6,12 @@ namespace App\Services;
 
 use App\Models\Appointment;
 use App\Models\Article;
-use App\Models\Category;
 use App\Models\Department;
-use App\Models\Donation;
 use App\Models\Facility;
 use App\Models\FacilityStaff;
 use App\Models\JobPost;
 use App\Models\Patient;
 use App\Models\Staff;
-use App\Models\Story;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +20,7 @@ class NewFacilityDashboardService
 {
     use MonthlyCountTrait;
 
-    public function getCards(Facility $facility): array
+    public function getCards(Facility $facility, ?int $facilityStaffId = null): array
     {
         $facilityId = $facility->id;
 
@@ -35,19 +32,16 @@ class NewFacilityDashboardService
                 ->count(),
             'total_departments' => FacilityStaff::where('facility_id', $facilityId)
                 ->whereNotNull('department_id')->distinct('department_id')->count('department_id'),
-            'total_patients' => Appointment::whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facilityId))
+            'total_patients' => $this->appointmentQuery($facilityId, $facilityStaffId)
                 ->distinct('patient_id')
                 ->count('patient_id'),
-            'total_appointments' => Appointment::whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facilityId))->count(),
+            'total_appointments' => $this->appointmentQuery($facilityId, $facilityStaffId)->count(),
             'total_articles' => Article::forFacility($facilityId)->count(),
-            'total_stories' => Story::whereHas('patient', fn ($q) => $q->whereHas('appointments.facilityStaff', fn ($fs) => $fs->where('facility_id', $facilityId)))->count(),
             'total_job_posts' => JobPost::where('facility_id', $facilityId)->count(),
-            'total_donations' => Donation::whereHas('story.patient', fn ($q) => $q->whereHas('appointments.facilityStaff', fn ($fs) => $fs->where('facility_id', $facilityId)))->count(),
-            'total_categories' => Category::whereHas('articles', fn ($q) => $q->forFacility($facilityId))->count(),
         ];
     }
 
-    public function getGrowthPercentages(Facility $facility): array
+    public function getGrowthPercentages(Facility $facility, ?int $facilityStaffId = null): array
     {
         $facilityId = $facility->id;
 
@@ -55,51 +49,57 @@ class NewFacilityDashboardService
             'staff_growth' => $this->growthPercentageForFacilityStaff($facilityId),
             'doctors_growth' => $this->growthPercentageForDoctors($facilityId),
             'departments_growth' => $this->growthPercentageForDepartments($facilityId),
-            'patients_growth' => $this->growthPercentageForPatients($facilityId),
-            'appointments_growth' => $this->growthPercentageForAppointments($facilityId),
+            'patients_growth' => $this->growthPercentageForPatients($facilityId, $facilityStaffId),
+            'appointments_growth' => $this->growthPercentageForAppointments($facilityId, $facilityStaffId),
             'articles_growth' => $this->growthPercentage(Article::forFacility($facilityId)),
             'job_posts_growth' => $this->growthPercentage(new JobPost, $facilityId, 'facility_id'),
         ];
     }
 
-    public function getRecentData(Facility $facility): array
+    public function getRecentData(Facility $facility, ?int $facilityStaffId = null): array
     {
         $facilityId = $facility->id;
 
         return [
             'staff' => $this->recentStaff($facilityId),
             'doctors' => $this->recentDoctors($facilityId),
-            'patients' => $this->recentPatients($facilityId),
+            'patients' => $this->recentPatients($facilityId, $facilityStaffId),
             'articles' => $this->recentArticles($facilityId),
-            'stories' => $this->recentStories($facilityId),
             'job_posts' => $this->recentJobPosts($facilityId),
-            'appointments' => $this->recentAppointments($facilityId),
+            'appointments' => $this->recentAppointments($facilityId, $facilityStaffId),
             'departments' => $this->recentDepartments($facilityId),
         ];
     }
 
-    public function getCharts(Facility $facility): array
+    public function getCharts(Facility $facility, ?int $facilityStaffId = null): array
     {
         $facilityId = $facility->id;
 
-        $facilityStaffIds = FacilityStaff::where('facility_id', $facilityId)->pluck('id');
-        $staffIds = FacilityStaff::where('facility_id', $facilityId)->pluck('staff_id');
-
         return [
-            'appointments_per_month' => $this->appointmentsPerMonth($facilityId),
-            'patients_growth' => $this->patientsPerMonth($facilityId),
+            'appointments_per_month' => $this->appointmentsPerMonth($facilityId, $facilityStaffId),
+            'patients_growth' => $this->patientsPerMonth($facilityId, $facilityStaffId),
             'doctors_growth' => $this->monthlyCount(
                 FacilityStaff::whereNull('ended_at')->whereHas('role', fn ($q) => $q->where('slug', 'doctor')),
                 $facilityId,
                 'facility_id'
             ),
-            'stories_published' => $this->storiesPerMonth($facilityId),
             'articles_published' => $this->monthlyCount(Article::forFacility($facilityId)),
             'top_departments' => $this->topDepartments($facilityId),
-            'top_doctors' => $this->topDoctors($facilityId),
+            'top_doctors' => $this->topDoctors($facilityId, $facilityStaffId),
             'top_symptoms' => $this->topSymptoms($facilityId),
-            'appointment_status' => $this->appointmentStatusDistribution($facilityId),
+            'appointment_status' => $this->appointmentStatusDistribution($facilityId, $facilityStaffId),
         ];
+    }
+
+    private function appointmentQuery(int $facilityId, ?int $facilityStaffId = null)
+    {
+        $query = Appointment::whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facilityId));
+
+        if ($facilityStaffId !== null) {
+            $query->where('facility_staff_id', $facilityStaffId);
+        }
+
+        return $query;
     }
 
     private function growthPercentageForFacilityStaff(int $facilityId): float
@@ -146,14 +146,14 @@ class NewFacilityDashboardService
         return round((($current - $previous) / $previous) * 100, 1);
     }
 
-    private function growthPercentageForPatients(int $facilityId): float
+    private function growthPercentageForPatients(int $facilityId, ?int $facultyStaffId = null): float
     {
         $now = now();
         $currentPeriod = (clone $now)->startOfMonth();
         $previousPeriod = (clone $now)->subMonth()->startOfMonth();
 
-        $countForPeriod = function ($start, $end) use ($facilityId) {
-            return Appointment::whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facilityId))
+        $countForPeriod = function ($start, $end) use ($facilityId, $facultyStaffId) {
+            return $this->appointmentQuery($facilityId, $facultyStaffId)
                 ->whereBetween('created_at', [$start, $end])
                 ->distinct('patient_id')
                 ->count('patient_id');
@@ -169,13 +169,13 @@ class NewFacilityDashboardService
         return round((($current - $previous) / $previous) * 100, 1);
     }
 
-    private function growthPercentageForAppointments(int $facilityId): float
+    private function growthPercentageForAppointments(int $facilityId, ?int $facultyStaffId = null): float
     {
         $now = now();
         $currentPeriod = (clone $now)->startOfMonth();
         $previousPeriod = (clone $now)->subMonth()->startOfMonth();
 
-        $base = fn ($dateQuery) => Appointment::whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facilityId))
+        $base = fn ($dateQuery) => $this->appointmentQuery($facilityId, $facultyStaffId)
             ->where($dateQuery);
 
         $current = $base(fn ($q) => $q->where('created_at', '>=', $currentPeriod))->count();
@@ -246,9 +246,9 @@ class NewFacilityDashboardService
             ]);
     }
 
-    private function recentPatients(int $facilityId): Collection
+    private function recentPatients(int $facilityId, ?int $facilityStaffId = null): Collection
     {
-        $patientIds = Appointment::whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facilityId))
+        $patientIds = $this->appointmentQuery($facilityId, $facilityStaffId)
             ->distinct('patient_id')
             ->pluck('patient_id');
 
@@ -279,21 +279,6 @@ class NewFacilityDashboardService
             ]);
     }
 
-    private function recentStories(int $facilityId): Collection
-    {
-        return Story::whereHas('patient.appointments.facilityStaff', fn ($q) => $q->where('facility_id', $facilityId))
-            ->with('patient.user:id,uuid,name')
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(fn ($s) => [
-                'uuid' => $s->uuid,
-                'title' => $s->getTranslations('title'),
-                'status' => $s->status,
-                'created_at' => $s->created_at,
-            ]);
-    }
-
     private function recentJobPosts(int $facilityId): Collection
     {
         return JobPost::where('facility_id', $facilityId)
@@ -309,9 +294,9 @@ class NewFacilityDashboardService
             ]);
     }
 
-    private function recentAppointments(int $facilityId): Collection
+    private function recentAppointments(int $facilityId, ?int $facilityStaffId = null): Collection
     {
-        return Appointment::whereHas('facilityStaff', fn ($q) => $q->where('facility_id', $facilityId))
+        return $this->appointmentQuery($facilityId, $facilityStaffId)
             ->with('facilityStaff.staff.user:id,uuid,name', 'patient.user:id,uuid,name')
             ->latest()
             ->take(5)
@@ -344,7 +329,7 @@ class NewFacilityDashboardService
             ]);
     }
 
-    private function appointmentsPerMonth(int $facilityId): Collection
+    private function appointmentsPerMonth(int $facilityId, ?int $facilityStaffId = null): Collection
     {
         $now = now();
         $months = collect();
@@ -363,6 +348,7 @@ class NewFacilityDashboardService
         $raw = DB::table('appointments')
             ->join('facility_staff', 'appointments.facility_staff_id', '=', 'facility_staff.id')
             ->where('facility_staff.facility_id', $facilityId)
+            ->when($facilityStaffId !== null, fn ($q) => $q->where('appointments.facility_staff_id', $facilityStaffId))
             ->where('appointments.created_at', '>=', $from)
             ->selectRaw("{$dateFormat} as month, COUNT(*) as total")
             ->groupBy(DB::raw($dateFormat))
@@ -375,7 +361,7 @@ class NewFacilityDashboardService
         ]);
     }
 
-    private function patientsPerMonth(int $facilityId): Collection
+    private function patientsPerMonth(int $facilityId, ?int $facilityStaffId = null): Collection
     {
         $now = now();
         $months = collect();
@@ -394,41 +380,9 @@ class NewFacilityDashboardService
         $raw = DB::table('appointments')
             ->join('facility_staff', 'appointments.facility_staff_id', '=', 'facility_staff.id')
             ->where('facility_staff.facility_id', $facilityId)
+            ->when($facilityStaffId !== null, fn ($q) => $q->where('appointments.facility_staff_id', $facilityStaffId))
             ->where('appointments.created_at', '>=', $from)
             ->selectRaw("{$dateFormat} as month, COUNT(DISTINCT patient_id) as total")
-            ->groupBy(DB::raw($dateFormat))
-            ->orderBy('month')
-            ->pluck('total', 'month');
-
-        return $months->map(fn (string $m) => [
-            'label' => Carbon::createFromFormat('Y-m', $m)->format('M'),
-            'value' => (int) ($raw[$m] ?? 0),
-        ]);
-    }
-
-    private function storiesPerMonth(int $facilityId): Collection
-    {
-        $now = now();
-        $months = collect();
-        for ($i = 11; $i >= 0; $i--) {
-            $date = $now->copy()->subMonths($i);
-            $months->push($date->format('Y-m'));
-        }
-
-        $driver = DB::connection()->getDriverName();
-        $dateFormat = $driver === 'sqlite'
-            ? "strftime('%Y-%m', stories.created_at)"
-            : "DATE_FORMAT(stories.created_at, '%Y-%m')";
-
-        $from = $now->copy()->subMonths(12)->startOfMonth();
-
-        $raw = DB::table('stories')
-            ->join('patients', 'stories.patient_id', '=', 'patients.id')
-            ->join('appointments', 'patients.id', '=', 'appointments.patient_id')
-            ->join('facility_staff', 'appointments.facility_staff_id', '=', 'facility_staff.id')
-            ->where('facility_staff.facility_id', $facilityId)
-            ->where('stories.created_at', '>=', $from)
-            ->selectRaw("{$dateFormat} as month, COUNT(DISTINCT stories.id) as total")
             ->groupBy(DB::raw($dateFormat))
             ->orderBy('month')
             ->pluck('total', 'month');
@@ -458,11 +412,12 @@ class NewFacilityDashboardService
             ]);
     }
 
-    private function topDoctors(int $facilityId): Collection
+    private function topDoctors(int $facilityId, ?int $facilityStaffId = null): Collection
     {
         $staffIds = FacilityStaff::where('facility_id', $facilityId)
             ->whereNull('ended_at')
             ->whereHas('role', fn ($q) => $q->where('slug', 'doctor'))
+            ->when($facilityStaffId !== null, fn ($q) => $q->where('id', $facilityStaffId))
             ->pluck('staff_id');
 
         return Staff::whereIn('id', $staffIds)
@@ -503,11 +458,12 @@ class NewFacilityDashboardService
             ]);
     }
 
-    private function appointmentStatusDistribution(int $facilityId): Collection
+    private function appointmentStatusDistribution(int $facilityId, ?int $facilityStaffId = null): Collection
     {
         return DB::table('appointments')
             ->join('facility_staff', 'appointments.facility_staff_id', '=', 'facility_staff.id')
             ->where('facility_staff.facility_id', $facilityId)
+            ->when($facilityStaffId !== null, fn ($q) => $q->where('appointments.facility_staff_id', $facilityStaffId))
             ->selectRaw('appointments.status, COUNT(*) as count')
             ->groupBy('appointments.status')
             ->orderByDesc('count')

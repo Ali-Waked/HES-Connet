@@ -40,6 +40,7 @@ use App\Http\Controllers\Api\Dashboard\SymptomController as DashboardSymptomCont
 use App\Http\Controllers\Api\Dashboard\TagController;
 use App\Http\Controllers\Api\Dashboard\UserController;
 use App\Http\Controllers\Api\Dashboard\UsersController as SuperAdminUsersController;
+use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\Facility\AppointmentController as FacilityAppointmentController;
 // use App\Http\Controllers\Api\Facility\ArticleController as FacilityArticleController;
 use App\Http\Controllers\Api\Facility\FacilityDashboardController;
@@ -133,6 +134,12 @@ Route::middleware('auth:sanctum')->prefix('articles')->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/set-active-workspace/{facility}', [WorkspaceController::class, 'setActiveWorkspace']);
+});
+
+// Email Verification
+Route::middleware(['auth:sanctum', 'throttle:6,1'])->prefix('email')->group(function () {
+    Route::get('/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])->name('verification.verify');
+    Route::post('/verification-notification', [EmailVerificationController::class, 'resend'])->name('verification.send');
 });
 
 Route::prefix('appointments')->group(function () {
@@ -488,6 +495,7 @@ Route::middleware(['auth:sanctum'])->prefix('dashboard')->name('dashboard.')->gr
         Route::get('/stats', [AppointmentController::class, 'stats'])->name('stats');
         Route::get('/calendar', [AppointmentController::class, 'calendar'])->name('calendar');
         Route::get('/analytics', [AppointmentController::class, 'analytics'])->name('analytics');
+        Route::get('/{appointment}', [AppointmentController::class, 'show'])->name('show');
     });
 
     Route::get('facility/{facility}/appointments/stats', [FacilityAppointmentController::class, 'stats']);
@@ -550,18 +558,6 @@ Route::prefix('facility/{facility}')
         );
     });
 Route::middleware(['auth:sanctum', 'dashboard.access:facility'])->prefix('facility')->group(function () {
-    // Dashboard
-    Route::middleware('permission:facility_dashboard.view')->group(function () {
-        Route::get('/dashboard', [FacilityDashboardController::class, 'dashboard']);
-        Route::get('/dashboard/appointments/live', [FacilityDashboardController::class, 'liveAppointments']);
-        Route::get('/dashboard/doctors-performance', [FacilityDashboardController::class, 'doctorsPerformance']);
-        Route::get('/dashboard/patients', [FacilityDashboardController::class, 'patients']);
-        Route::get('/dashboard/schedules', [FacilityDashboardController::class, 'schedules']);
-        Route::get('/dashboard/analytics', [FacilityDashboardController::class, 'analytics']);
-        Route::get('/dashboard/alerts', [FacilityDashboardController::class, 'alerts']);
-        Route::get('/staff', [FacilityDashboardController::class, 'staff']);
-    });
-
     // Patients
     Route::middleware('permission:patients.view')->group(function () {
         Route::get('/patients', [FacilityPatientController::class, 'index']);
@@ -615,6 +611,7 @@ Route::middleware(['auth:sanctum'])
         Route::put('/conversations/{uuid}', [AiConversationController::class, 'update'])->name('conversations.update');
         Route::delete('/conversations/{uuid}', [AiConversationController::class, 'destroy'])->name('conversations.destroy');
         Route::post('/conversations/{uuid}/messages', [AiConversationController::class, 'storeMessage'])->name('conversations.messages.store');
+        Route::post('/conversations/{uuid}/recommend-doctor', [AiConversationController::class, 'recommendDoctor'])->name('conversations.recommend-doctor');
     });
 
 // =============================================================================
@@ -678,6 +675,23 @@ Route::middleware(['auth:sanctum', 'dashboard.access:admin'])
     });
 
 // =============================================================================
+// FACILITY DASHBOARD (scoped by facility UUID)
+// =============================================================================
+
+Route::middleware(['auth:sanctum'])
+    ->prefix('facility/{facility:uuid}/dashboard')
+    ->name('facility.dashboard.')
+    ->group(function () {
+        Route::get('/', [FacilityDashboardController::class, 'overview'])->name('overview');
+        Route::get('/alerts', [FacilityDashboardController::class, 'alerts'])->name('alerts');
+        Route::get('/analytics', [FacilityDashboardController::class, 'analytics'])->name('analytics');
+        Route::get('/appointments/live', [FacilityDashboardController::class, 'liveAppointments'])->name('appointments.live');
+        Route::get('/doctors-performance', [FacilityDashboardController::class, 'doctorsPerformance'])->name('doctors-performance');
+        Route::get('/patients', [FacilityDashboardController::class, 'patients'])->name('patients');
+        Route::get('/schedules', [FacilityDashboardController::class, 'schedules'])->name('schedules');
+    });
+
+// =============================================================================
 // FACILITY OWNER - DASHBOARD & REPORTS
 // =============================================================================
 
@@ -685,7 +699,6 @@ Route::middleware(['auth:sanctum', 'dashboard.access:facility'])
     ->prefix('facility')
     ->name('facility.')
     ->group(function () {
-        Route::get('dashboard', FacilityDashboardController::class)->name('overview');
         Route::get('reports', [FacilityReportController::class, 'index'])->name('reports.index');
         Route::get('reports/export/excel', [FacilityReportController::class, 'exportExcel'])->name('reports.export.excel');
         Route::get('reports/export/pdf', [FacilityReportController::class, 'exportPdf'])->name('reports.export.pdf');
