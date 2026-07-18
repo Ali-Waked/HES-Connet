@@ -17,8 +17,7 @@ class RolePermissionSeeder extends Seeder
 
         $this->assignSuperAdmin($byKey);
         $this->assignOrganizationAdmin($byKey);
-        $this->assignHospitalAdmin($byKey);
-        $this->assignClinicAdmin($byKey);
+        $this->assignFacilityAdmin($byKey);
         $this->assignDepartmentManager($byKey);
         $this->assignContentManager($byKey);
         $this->assignFinanceManager($byKey);
@@ -59,9 +58,9 @@ class RolePermissionSeeder extends Seeder
         ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
     }
 
-    private function assignHospitalAdmin(Collection $byKey): void
+    private function assignFacilityAdmin(Collection $byKey): void
     {
-        $role = Role::where('slug', 'hospital_admin')->first();
+        $role = Role::where('slug', 'facility_admin')->first();
         if (! $role) {
             return;
         }
@@ -83,31 +82,6 @@ class RolePermissionSeeder extends Seeder
             'view_facility_images', 'upload_facility_image', 'delete_facility_image',
             'view_reports', 'export_reports',
             'view_notifications', 'send_notification',
-            'view_profile', 'update_profile',
-        ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
-    }
-
-    private function assignClinicAdmin(Collection $byKey): void
-    {
-        $role = Role::where('slug', 'clinic_admin')->first();
-        if (! $role) {
-            return;
-        }
-
-        $role->permissions()->sync(collect([
-            'view_dashboard_statistics',
-            'view_facilities', 'show_facility', 'update_facility',
-            'view_departments', 'show_department',
-            'view_staff', 'show_staff', 'create_staff', 'update_staff', 'delete_staff',
-            'view_patients', 'show_patient', 'create_patient', 'update_patient',
-            'view_appointments', 'show_appointment', 'create_appointment', 'update_appointment', 'cancel_appointment',
-            'view_prescriptions', 'show_prescription',
-            'view_medication_requests', 'show_medication_request',
-            'view_medical_records', 'show_medical_record',
-            'view_staff_schedules',
-            'view_reviews',
-            'view_notifications', 'send_notification',
-            'view_reports',
             'view_profile', 'update_profile',
         ])->map(fn (string $key) => $byKey->get($key)?->id)->filter()->values()->toArray());
     }

@@ -38,8 +38,6 @@ class FacilityStaff extends Pivot
 
     private const ADMIN_ROLES = [
         'facility_admin',
-        'clinic_admin',
-        'hospital_admin',
     ];
 
     public function uniqueIds(): array

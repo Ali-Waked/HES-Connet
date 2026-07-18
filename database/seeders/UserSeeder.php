@@ -81,14 +81,14 @@ class UserSeeder extends Seeder
             [
                 'name' => ['en' => 'Layla Mansour', 'ar' => 'ليلى منصور'],
                 'email' => 'layla@example.com',
-                'role' => 'hospital_admin',
+                'role' => 'facility_admin',
                 'gender' => 'female',
                 'phone' => '+970599100009',
             ],
             [
                 'name' => ['en' => 'Hani Qasim', 'ar' => 'هاني قاسم'],
                 'email' => 'hani@example.com',
-                'role' => 'clinic_admin',
+                'role' => 'facility_admin',
                 'gender' => 'male',
                 'phone' => '+970599100010',
             ],

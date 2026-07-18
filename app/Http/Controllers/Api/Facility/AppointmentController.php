@@ -15,12 +15,6 @@ use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
-    // private const ADMIN_ROLES = [
-    //     'facility_admin',
-    //     'clinic_admin',
-    //     'hospital_admin',
-    // ];
-
     public function index(Request $request, Facility $facility): JsonResponse
     {
         $facilityStaff = $this->resolveFacilityStaff($facility);

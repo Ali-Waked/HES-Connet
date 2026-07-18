@@ -57,7 +57,7 @@ class FacilityStaffSeeder extends Seeder
                 'facility_id' => $facility->id,
                 'department_id' => $departments->random()->id,
                 'position_id' => ! empty($positions) ? $positions[array_rand($positions)] : null,
-                'role_id' => $roles->get('hospital_admin')?->id,
+                'role_id' => $roles->get('facility_admin')?->id,
                 'joined_at' => now()->subYears(fake()->numberBetween(2, 4))->format('Y-m-d'),
                 'ended_at' => null,
             ]);

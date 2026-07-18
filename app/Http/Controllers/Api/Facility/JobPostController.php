@@ -126,11 +126,7 @@ class JobPostController extends Controller
 
         $isAdmin = $facility->facilityStaff()
             ->whereHas('staff', fn ($q) => $q->where('user_id', $userId))
-            ->whereHas('role', fn ($q) => $q->whereIn('slug', [
-                'facility_admin',
-                'hospital_admin',
-                'clinic_admin',
-            ]))
+            ->whereHas('role', fn ($q) => $q->where('slug', 'facility_admin'))
             ->exists();
 
         if (! $isAdmin) {
